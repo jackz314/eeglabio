@@ -1,3 +1,3 @@
-# PyEEGLAB
+# eeglabio
 
-Python support for EEGLAB files
+Python I/O support for EEGLAB files

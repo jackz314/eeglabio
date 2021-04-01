@@ -6,14 +6,14 @@ from numpy.testing import assert_allclose
 from raw import export_set
 from utils_tests import _TempDir
 
+raw_fname = Path(__file__).parent / "data" / "test_raw.fif"
 
-def test_export_set():
+
+def test_export_set(tmpdir):
     """Test saving a Raw instance to EEGLAB's set format"""
-    fname = Path(__file__).parent / "data" / "test_raw.fif"
-    raw = read_raw_fif(fname)
+    raw = read_raw_fif(raw_fname)
     raw.load_data()
-    tmpdir = _TempDir()
-    temp_fname = op.join(str(tmpdir), 'test.set')
+    temp_fname = op.join(str(tmpdir), 'test_raw.set')
     export_set(raw, temp_fname)
     raw_read = read_raw_eeglab(temp_fname, preload=True)
     assert raw.ch_names == raw_read.ch_names

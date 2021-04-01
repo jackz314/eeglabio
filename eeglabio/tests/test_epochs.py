@@ -11,6 +11,7 @@ raw_fname = Path(__file__).parent / "data" / "test_raw.fif"
 event_name = Path(__file__).parent / "data" / 'test-eve.fif'
 
 
+@pytest.mark.skip
 def _get_data(preload=False):
     """Get data."""
     raw = read_raw_fif(raw_fname, preload=preload, verbose='warning')
@@ -27,7 +28,7 @@ def test_export_set(tmpdir, preload):
     raw, events = _get_data()[:2]
     raw.load_data()
     epochs = Epochs(raw, events, preload=preload)
-    temp_fname = op.join(str(tmpdir), 'test.set')
+    temp_fname = op.join(str(tmpdir), 'test_epochs.set')
     export_set(epochs, temp_fname)
     epochs_read = read_epochs_eeglab(temp_fname)
     assert epochs.ch_names == epochs_read.ch_names
