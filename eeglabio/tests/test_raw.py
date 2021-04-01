@@ -3,8 +3,8 @@ from os import path as op
 import numpy as np
 from mne.io import read_raw_fif, read_raw_eeglab
 from numpy.testing import assert_allclose
-from raw import export_set
-from utils_tests import _TempDir
+
+from eeglabio.raw import export_set
 
 raw_fname = Path(__file__).parent / "data" / "test_raw.fif"
 

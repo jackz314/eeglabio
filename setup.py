@@ -16,6 +16,7 @@ if version is None:
 with open("requirements.txt") as f:
     requires = f.read().splitlines()
 
+GITHUB_URL = "https://github.com/jackz314/eeglabio"
 setuptools.setup(
     name="eeglabio",
     version=version,
@@ -25,10 +26,11 @@ setuptools.setup(
     license="BSD (3-clause)",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/jackz314/pyeeglab",
+    url=GITHUB_URL,
+    download_url=GITHUB_URL,
     project_urls={
-        "Source": "https://github.com/jackz314/pyeeglab",
-        "Tracker": "https://github.com/jackz314/pyeeglab/issues",
+        "Source": GITHUB_URL,
+        "Tracker": GITHUB_URL + '/issues',
     },
     classifiers=[
         "Programming Language :: Python :: 3",

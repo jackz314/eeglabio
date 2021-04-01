@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.core.records import fromarrays
 from scipy.io import savemat
-from utils import _get_eeglab_full_cords
+from .utils import _get_eeglab_full_cords
 
 
 def export_set(inst, fname):
