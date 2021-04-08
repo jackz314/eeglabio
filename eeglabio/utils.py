@@ -1,23 +1,23 @@
 import numpy as np
 
 
-def _cart_to_eeglab_full_coords_xyz(x, y, z):
-    """Convert Cartesian coordinates to EEGLAB full coordinates.
+def _xyz_cart_to_eeglab_sph(x, y, z):
+    """Convert Cartesian coordinates to EEGLAB spherical coordinates.
 
     Also see https://github.com/sccn/eeglab/blob/develop/functions/sigprocfunc/convertlocs.m
 
     Parameters
     ----------
-    x : ndarray, shape (n_points, )
+    x : np.ndarray, shape (n_points, )
         Array of x coordinates
-    y : ndarray, shape (n_points, )
+    y : np.ndarray, shape (n_points, )
         Array of y coordinates
-    z : ndarray, shape (n_points, )
+    z : np.ndarray, shape (n_points, )
         Array of z coordinates
 
     Returns
     -------
-    sph_pts : ndarray, shape (n_points, 7)
+    sph_pts : np.ndarray, shape (n_points, 7)
         Array containing points in spherical coordinates
         (sph_theta, sph_phi, sph_radius, theta, radius,
          sph_theta_besa, sph_phi_besa)
@@ -67,19 +67,19 @@ def _cart_to_eeglab_full_coords_xyz(x, y, z):
     return out
 
 
-def _cart_to_eeglab_full_coords(cart):
-    """Convert Cartesian coordinates to EEGLAB full coordinates.
+def _cart_to_eeglab_sph(cart):
+    """Convert Cartesian coordinates to EEGLAB spherical coordinates.
 
     Also see https://github.com/sccn/eeglab/blob/develop/functions/sigprocfunc/convertlocs.m
 
     Parameters
     ----------
-    cart : ndarray, shape (n_points, 3)
+    cart : np.ndarray, shape (n_points, 3)
         Array containing points in Cartesian coordinates (x, y, z)
 
     Returns
     -------
-    sph_pts : ndarray, shape (n_points, 7)
+    sph_pts : np.ndarray, shape (n_points, 7)
         Array containing points in spherical coordinates
         (sph_theta, sph_phi, sph_radius, theta, radius,
          sph_theta_besa, sph_phi_besa)
@@ -89,28 +89,100 @@ def _cart_to_eeglab_full_coords(cart):
     assert cart.ndim == 2 and cart.shape[1] == 3
     cart = np.atleast_2d(cart)
     x, y, z = cart.T
-    return _cart_to_eeglab_full_coords_xyz(x, y, z)
+    return _xyz_cart_to_eeglab_sph(x, y, z)
 
 
-def _get_eeglab_full_cords(inst):
-    """Get full EEGLAB coords from MNE instance (Raw or Epochs)
+def cart_to_eeglab(cart):
+    """Convert Cartesian coordinates to EEGLAB full coordinates.
 
     Parameters
     ----------
-    inst: Epochs or Raw
-        Instance of epochs or raw to extract x,y,z coordinates from
+    cart : np.ndarray, shape (n_points, 3)
+        Array containing points in Cartesian coordinates (x, y, z)
 
     Returns
     -------
-    full_coords : ndarray, shape (n_channels, 10)
+    full_coords : np.ndarray, shape (n_channels, 10)
         xyz + spherical and polar coords
-        see cart_to_eeglab_full_coords for more detail
+        see cart_to_eeglab_full_coords for more detail.
     """
+    return np.append(cart, _cart_to_eeglab_sph(cart), 1)  # hstack
+
+
+def export_mne_epochs(inst, fname):
+    """Export Epochs to EEGLAB's .set format.
+    Parameters
+    ----------
+    inst : mne.BaseEpochs
+        Epochs instance to save
+    fname : str
+        Name of the export file.
+
+    Notes
+    -----
+    Channel locations are expanded to the full EEGLAB format
+    For more details see .io.utils.cart_to_eeglab_full_coords
+    """
+    from .epochs import export_set
+    # load data first
+    inst.load_data()
+
+    # remove extra epoc and STI channels
+    chs_drop = [ch for ch in ['epoc', 'STI 014'] if ch in inst.ch_names]
+    inst.drop_channels(chs_drop)
+
     chs = inst.info["chs"]
     cart_coords = np.array([d['loc'][:3] for d in chs])
-    # (-y x z) to (x y z)
-    cart_coords[:, 0] = -cart_coords[:, 0]  # -y to y
-    cart_coords[:, [0, 1]] = cart_coords[:, [1, 0]]  # swap x (1) and y (0)
-    other_coords = _cart_to_eeglab_full_coords(cart_coords)
-    full_coords = np.append(cart_coords, other_coords, 1)  # hstack
-    return full_coords
+    if cart_coords.any():  # has coordinates
+        # (-y x z) to (x y z)
+        cart_coords[:, 0] = -cart_coords[:, 0]  # -y to y
+        # swap x (1) and y (0)
+        cart_coords[:, [0, 1]] = cart_coords[:, [1, 0]]
+    else:
+        cart_coords = None
+
+    export_set(fname, inst.get_data(), inst.info['sfreq'], inst.events,
+               inst.tmin, inst.tmax, inst.ch_names, inst.event_id,
+               cart_coords)
+
+
+def export_mne_raw(inst, fname):
+    """Export Raw to EEGLAB's .set format.
+
+    Parameters
+    ----------
+    inst : mne.BaseRaw
+        Raw instance to save
+    fname : str
+        Name of the export file.
+
+    Notes
+    -----
+    Channel locations are expanded to the full EEGLAB format
+    For more details see pyeeglab.utils._cart_to_eeglab_full_coords
+    """
+    from .raw import export_set
+    # load data first
+    inst.load_data()
+
+    # remove extra epoc and STI channels
+    chs_drop = [ch for ch in ['epoc'] if ch in inst.ch_names]
+    if 'STI 014' in inst.ch_names and \
+            not (inst.filenames[0].endswith('.fif')):
+        chs_drop.append('STI 014')
+    inst.drop_channels(chs_drop)
+
+    chs = inst.info["chs"]
+    cart_coords = np.array([d['loc'][:3] for d in chs])
+    if cart_coords.any():  # has coordinates
+        # (-y x z) to (x y z)
+        cart_coords[:, 0] = -cart_coords[:, 0]  # -y to y
+        # swap x (1) and y (0)
+        cart_coords[:, [0, 1]] = cart_coords[:, [1, 0]]
+    else:
+        cart_coords = None
+
+    annotations = [inst.annotations.description, inst.annotations.onset,
+                   inst.annotations.duration]
+    export_set(fname, inst.get_data(), inst.info['sfreq'],
+               inst.ch_names, cart_coords, annotations)

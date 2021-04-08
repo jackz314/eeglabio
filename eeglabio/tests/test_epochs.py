@@ -1,12 +1,13 @@
+from os import path as op
 from pathlib import Path
+
+import numpy as np
 import pytest
 from mne import read_events, pick_types, Epochs, read_epochs_eeglab
 from mne.io import read_raw_fif
-from os import path as op
-import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal
 
-from eeglabio.epochs import export_set
+from eeglabio.utils import export_mne_epochs
 
 raw_fname = Path(__file__).parent / "data" / "test_raw.fif"
 event_name = Path(__file__).parent / "data" / 'test-eve.fif'
@@ -30,7 +31,7 @@ def test_export_set(tmpdir, preload):
     raw.load_data()
     epochs = Epochs(raw, events, preload=preload)
     temp_fname = op.join(str(tmpdir), 'test_epochs.set')
-    export_set(epochs, temp_fname)
+    export_mne_epochs(epochs, temp_fname)
     epochs_read = read_epochs_eeglab(temp_fname)
     assert epochs.ch_names == epochs_read.ch_names
     cart_coords = np.array([d['loc'][:3]
