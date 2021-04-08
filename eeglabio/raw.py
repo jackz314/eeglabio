@@ -49,18 +49,16 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None):
     else:
         chanlocs = fromarrays([ch_names], names=["labels"])
 
-    eeg = dict(data=data, setname=fname, nbchan=data.shape[0],
-               pnts=data.shape[1], trials=1, srate=sfreq, xmin=0,
-               xmax=data.shape[1] / sfreq, chanlocs=chanlocs, icawinv=[],
-               icasphere=[], icaweights=[])
+    eeg_d = dict(data=data, setname=fname, nbchan=data.shape[0],
+                 pnts=data.shape[1], trials=1, srate=sfreq, xmin=0,
+                 xmax=data.shape[1] / sfreq, chanlocs=chanlocs, icawinv=[],
+                 icasphere=[], icaweights=[])
 
     if annotations is not None:
         events = fromarrays([annotations[0],
                              annotations[1] * sfreq + 1,
                              annotations[2] * sfreq],
                             names=["type", "latency", "duration"])
-        eeg['event'] = events
-
-    eeg_d = dict(EEG=eeg)
+        eeg_d['event'] = events
 
     savemat(fname, eeg_d, appendmat=False)
