@@ -14,8 +14,16 @@ import os
 import sys
 currdir = os.path.dirname(__file__)
 sys.path.append(os.path.abspath(os.path.join(currdir, '..')))
+sys.path.append(os.path.abspath('..'))
 
-import eeglabio
+version = None
+with open(os.path.join(currdir, '..', 'eeglabio', '_version.py'), 'r') as fid:
+    for line in (line.strip() for line in fid):
+        if line.startswith('__version__'):
+            version = line.split('=')[1].strip().strip("'")
+            break
+if version is None:
+    version = "0.0.1"
 
 # -- Project information -----------------------------------------------------
 
@@ -24,7 +32,7 @@ copyright = '2021, Jack Zhang'
 author = 'Jack Zhang'
 
 # The full version, including alpha/beta/rc tags
-release = eeglabio.__version__
+release = version
 
 
 # -- General configuration ---------------------------------------------------
@@ -76,3 +84,6 @@ html_theme_options = {
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+print(currdir)
+print(sys.path)

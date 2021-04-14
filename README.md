@@ -1,4 +1,4 @@
-# eeglabio
+# eeglabio [![Documentation Status](https://readthedocs.org/projects/eeglabio/badge/?version=latest)](https://eeglabio.readthedocs.io/en/latest/?badge=latest)
 
 I/O support for EEGLAB files in Python.
 
