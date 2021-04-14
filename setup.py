@@ -22,7 +22,7 @@ setuptools.setup(
     version=version,
     author="Jack Zhang",
     author_email="zhangmengyu10@gmail.com",
-    description="Python I/O support for EEGLAB files",
+    description="I/O support for EEGLAB files in Python",
     license="BSD (3-clause)",
     long_description=long_description,
     long_description_content_type="text/markdown",

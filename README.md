@@ -1,6 +1,6 @@
 # eeglabio
 
-Python I/O support for EEGLAB files
+I/O support for EEGLAB files in Python.
 
 ### Installation
 

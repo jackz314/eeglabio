@@ -4,23 +4,27 @@ import numpy as np
 def _xyz_cart_to_eeglab_sph(x, y, z):
     """Convert Cartesian coordinates to EEGLAB spherical coordinates.
 
-    Also see https://github.com/sccn/eeglab/blob/develop/functions/sigprocfunc/convertlocs.m
-
     Parameters
     ----------
-    x : np.ndarray, shape (n_points, )
+    x : numpy.ndarray, shape (n_points, )
         Array of x coordinates
-    y : np.ndarray, shape (n_points, )
+    y : numpy.ndarray, shape (n_points, )
         Array of y coordinates
-    z : np.ndarray, shape (n_points, )
+    z : numpy.ndarray, shape (n_points, )
         Array of z coordinates
 
     Returns
     -------
-    sph_pts : np.ndarray, shape (n_points, 7)
+    sph_pts : numpy.ndarray, shape (n_points, 7)
         Array containing points in spherical coordinates
         (sph_theta, sph_phi, sph_radius, theta, radius,
-         sph_theta_besa, sph_phi_besa)
+        sph_theta_besa, sph_phi_besa)
+        
+    See Also
+    --------
+    https://github.com/sccn/eeglab/blob/develop/functions/sigprocfunc/convertlocs.m
+    
+    https://www.mathworks.com/help/matlab/ref/cart2sph.html
     """  # noqa: E501
 
     assert len(x) == len(y) == len(z)
@@ -67,22 +71,27 @@ def _xyz_cart_to_eeglab_sph(x, y, z):
     return out
 
 
-def _cart_to_eeglab_sph(cart):
+def cart_to_eeglab_sph(cart):
     """Convert Cartesian coordinates to EEGLAB spherical coordinates.
-
-    Also see https://github.com/sccn/eeglab/blob/develop/functions/sigprocfunc/convertlocs.m
-
+    Implementation is based on 
+    `EEGLAB's convertlocs <https://github.com/sccn/eeglab/blob/develop/functions/sigprocfunc/convertlocs.m>`_
+    and Matlab's `cart2sph <https://www.mathworks.com/help/matlab/ref/cart2sph.html>`_
+    
     Parameters
     ----------
-    cart : np.ndarray, shape (n_points, 3)
+    cart : ndarray, shape (n_points, 3)
         Array containing points in Cartesian coordinates (x, y, z)
 
     Returns
     -------
-    sph_pts : np.ndarray, shape (n_points, 7)
+    sph_pts : ndarray, shape (n_points, 7)
         Array containing points in spherical coordinates
         (sph_theta, sph_phi, sph_radius, theta, radius,
-         sph_theta_besa, sph_phi_besa)
+        sph_theta_besa, sph_phi_besa)
+    
+    See Also
+    --------
+    cart_to_eeglab
     """  # noqa: E501
 
     # based on transforms.py's _cart_to_sph()
@@ -97,31 +106,32 @@ def cart_to_eeglab(cart):
 
     Parameters
     ----------
-    cart : np.ndarray, shape (n_points, 3)
+    cart : numpy.ndarray, shape (n_points, 3)
         Array containing points in Cartesian coordinates (x, y, z)
 
     Returns
     -------
-    full_coords : np.ndarray, shape (n_channels, 10)
-        xyz + spherical and polar coords
-        see cart_to_eeglab_full_coords for more detail.
+    full_coords : numpy.ndarray, shape (n_channels, 10)
+        xyz + spherical and polar coords. See :func:`cart_to_eeglab_sph` for
+        more detail.
+
+    See Also
+    --------
+    cart_to_eeglab_sph
     """
-    return np.append(cart, _cart_to_eeglab_sph(cart), 1)  # hstack
+    return np.append(cart, cart_to_eeglab_sph(cart), 1)  # hstack
 
 
 def export_mne_epochs(inst, fname):
-    """Export Epochs to EEGLAB's .set format.
+    """Export MNE's Epochs instance to EEGLAB's .set format using
+    :func:`.epochs.export_set`.
+
     Parameters
     ----------
     inst : mne.BaseEpochs
         Epochs instance to save
     fname : str
         Name of the export file.
-
-    Notes
-    -----
-    Channel locations are expanded to the full EEGLAB format
-    For more details see .io.utils.cart_to_eeglab_full_coords
     """
     from .epochs import export_set
     # load data first
@@ -147,19 +157,15 @@ def export_mne_epochs(inst, fname):
 
 
 def export_mne_raw(inst, fname):
-    """Export Raw to EEGLAB's .set format.
+    """Export MNE's Raw instance to EEGLAB's .set format using
+    :func:`.raw.export_set`.
 
     Parameters
     ----------
-    inst : mne.BaseRaw
+    inst : mne.io.BaseRaw
         Raw instance to save
     fname : str
         Name of the export file.
-
-    Notes
-    -----
-    Channel locations are expanded to the full EEGLAB format
-    For more details see pyeeglab.utils._cart_to_eeglab_full_coords
     """
     from .raw import export_set
     # load data first

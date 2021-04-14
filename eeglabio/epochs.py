@@ -13,12 +13,12 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names,
     ----------
     fname : str
         Name of the export file.
-    data : np.ndarray, shape (n_epochs, n_channels, n_samples)
+    data : numpy.ndarray, shape (n_epochs, n_channels, n_samples)
         Data array containing epochs. Follows the same format as
         MNE Epochs' data array.
     sfreq : int
         sample frequency of data
-    events : np.ndarray, shape (n_events, 3)
+    events : numpy.ndarray, shape (n_events, 3)
         Event array, the first column contains the event time in samples,
         the second column contains the value of the stim channel immediately
         before the event/step, and the third column contains the event id.
@@ -32,13 +32,17 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names,
     event_id : dict
         Names of conditions corresponding to event ids (last column of events).
         If None, event names will default to string versions of the event ids.
-    ch_locs : np.ndarray, shape (n_channels, 3)
+    ch_locs : numpy.ndarray, shape (n_channels, 3)
         Array containing channel locations in Cartesian coordinates (x, y, z)
+
+    See Also
+    --------
+    .raw.export_set
 
     Notes
     -----
-    Channel locations are expanded to the full EEGLAB format
-    For more details see .io.utils.cart_to_eeglab_full_coords
+    Channel locations are expanded to the full EEGLAB format.
+    For more details see :func:`.utils.cart_to_eeglab_sph`.
     """
 
     data = data * 1e6  # convert to microvolts

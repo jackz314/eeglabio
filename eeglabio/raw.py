@@ -12,14 +12,14 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None):
     ----------
     fname : str
         Name of the export file.
-    data : np.ndarray, shape (n_epochs, n_channels, n_samples)
+    data : numpy.ndarray, shape (n_epochs, n_channels, n_samples)
         Data array containing epochs. Follows the same format as
         MNE Epochs' data array.
     sfreq : int
         sample frequency of data
     ch_names : list of str
         Channel names.
-    ch_locs : np.ndarray, shape (n_channels, 3)
+    ch_locs : numpy.ndarray, shape (n_channels, 3)
         Array containing channel locations in Cartesian coordinates (x, y, z)
     annotations : list, shape (3, n_annotations)
         List containing three annotation subarrays:
@@ -28,10 +28,14 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None):
         third array (float) is duration (in seconds)
         This roughly follows MNE's Annotations structure.
 
+    See Also
+    --------
+    .epochs.export_set
+
     Notes
     -----
-    Channel locations are expanded to the full EEGLAB format
-    For more details see .utils.cart_to_eeglab_full_coords
+    Channel locations are expanded to the full EEGLAB format.
+    For more details see :func:`.utils.cart_to_eeglab_sph`.
     """
 
     data = data * 1e6  # convert to microvolts
