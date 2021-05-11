@@ -6,7 +6,7 @@ from .utils import cart_to_eeglab
 
 
 def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
-               ref_channels='common'):
+               ref_channels="common"):
     """Export continuous raw data to EEGLAB's .set format.
 
     Parameters

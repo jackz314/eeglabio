@@ -10,6 +10,12 @@ Install from [PyPI](https://pypi.org/project/eeglabio):
 pip install eeglabio
 ```
 
+Or install the latest version of the code (unstable) from GitHub directly:
+
+```
+pip install https://github.com/jackz314/eeglabio/archive/main.zip
+```
+
 ### Dependencies
 
 eeglabio requires Python >= 3.6 and the following packages:

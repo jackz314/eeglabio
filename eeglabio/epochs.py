@@ -6,7 +6,7 @@ from .utils import cart_to_eeglab
 
 
 def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
-               ch_locs=None, ref_channels='common'):
+               ch_locs=None, ref_channels="common"):
     """Export epoch data to EEGLAB's .set format.
 
     Parameters
