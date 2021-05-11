@@ -10,7 +10,13 @@ Install from [PyPI](https://pypi.org/project/eeglabio):
 pip install eeglabio
 ```
 
-Or install the latest version of the code (unstable) from GitHub directly:
+Install from [Test PyPI](https://test.pypi.org/project/eeglabio) (unreleased):
+
+```
+pip install -i https://test.pypi.org/simple/ eeglabio
+```
+
+Install the latest version of the code from GitHub directly (unstable):
 
 ```
 pip install https://github.com/jackz314/eeglabio/archive/main.zip

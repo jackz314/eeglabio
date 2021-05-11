@@ -3,4 +3,4 @@ from . import epochs
 from . import raw
 from . import utils
 
-__all__ = ['epochs', 'raw', 'utils']
+__all__ = ['__version__', 'epochs', 'raw', 'utils']
