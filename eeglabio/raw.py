@@ -5,7 +5,8 @@ from scipy.io import savemat
 from .utils import cart_to_eeglab
 
 
-def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None):
+def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
+               ref_channels='common'):
     """Export continuous raw data to EEGLAB's .set format.
 
     Parameters
@@ -27,6 +28,12 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None):
         second array (float) is onset (starting time in seconds),
         third array (float) is duration (in seconds)
         This roughly follows MNE's Annotations structure.
+    ref_channels : list of str | str
+        The name(s) of the channel(s) used to construct the reference,
+        'average' for average reference, or 'common' (default) when there's no
+        specific reference set. Note that this parameter is only used to inform
+        EEGLAB of the existing reference, this method will not reference the
+        data for you.
 
     See Also
     --------
@@ -53,10 +60,13 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None):
     else:
         chanlocs = fromarrays([ch_names], names=["labels"])
 
+    if isinstance(ref_channels, list):
+        ref_channels = " ".join(ref_channels)
+
     eeg_d = dict(data=data, setname=fname, nbchan=data.shape[0],
                  pnts=data.shape[1], trials=1, srate=sfreq, xmin=0,
-                 xmax=data.shape[1] / sfreq, chanlocs=chanlocs, icawinv=[],
-                 icasphere=[], icaweights=[])
+                 xmax=data.shape[1] / sfreq, ref=ref_channels,
+                 chanlocs=chanlocs, icawinv=[], icasphere=[], icaweights=[])
 
     if annotations is not None:
         events = fromarrays([annotations[0],

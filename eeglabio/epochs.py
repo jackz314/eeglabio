@@ -5,8 +5,8 @@ from scipy.io import savemat
 from .utils import cart_to_eeglab
 
 
-def export_set(fname, data, sfreq, events, tmin, tmax, ch_names,
-               event_id=None, ch_locs=None):
+def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
+               ch_locs=None, ref_channels='common'):
     """Export epoch data to EEGLAB's .set format.
 
     Parameters
@@ -34,6 +34,12 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names,
         If None, event names will default to string versions of the event ids.
     ch_locs : numpy.ndarray, shape (n_channels, 3)
         Array containing channel locations in Cartesian coordinates (x, y, z)
+    ref_channels : list of str | str
+        The name(s) of the channel(s) used to construct the reference,
+        'average' for average reference, or 'common' (default) when there's no
+        specific reference set. Note that this parameter is only used to inform
+        EEGLAB of the existing reference, this method will not reference the
+        data for you.
 
     See Also
     --------
@@ -93,6 +99,9 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names,
     epochs = fromarrays([ep_event, ep_lat, ep_types],
                         names=["event", "eventlatency", "eventtype"])
 
+    if isinstance(ref_channels, list):
+        ref_channels = " ".join(ref_channels)
+
     eeg_d = dict(data=data,
                  setname=fname,
                  nbchan=data.shape[0],
@@ -101,6 +110,7 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names,
                  srate=sfreq,
                  xmin=tmin,
                  xmax=tmax,
+                 ref=ref_channels,
                  chanlocs=chanlocs,
                  event=events,
                  epoch=epochs,
