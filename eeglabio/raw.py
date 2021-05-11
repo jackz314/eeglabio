@@ -64,8 +64,8 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
         ref_channels = " ".join(ref_channels)
 
     eeg_d = dict(data=data, setname=fname, nbchan=data.shape[0],
-                 pnts=data.shape[1], trials=1, srate=sfreq, xmin=0,
-                 xmax=data.shape[1] / sfreq, ref=ref_channels,
+                 pnts=float(data.shape[1]), trials=1, srate=sfreq, xmin=0.0,
+                 xmax=float(data.shape[1] / sfreq), ref=ref_channels,
                  chanlocs=chanlocs, icawinv=[], icasphere=[], icaweights=[])
 
     if annotations is not None:
