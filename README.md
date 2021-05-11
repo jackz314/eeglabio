@@ -4,10 +4,10 @@ I/O support for EEGLAB files in Python.
 
 ### Installation
 
-Install from [PyPI](https://test.pypi.org/project/eeglabio):
+Install from [PyPI](https://pypi.org/project/eeglabio):
 
 ```
-pip install -i https://test.pypi.org/simple/ eeglabio
+pip install eeglabio
 ```
 
 ### Dependencies

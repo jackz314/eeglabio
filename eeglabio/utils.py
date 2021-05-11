@@ -19,11 +19,11 @@ def _xyz_cart_to_eeglab_sph(x, y, z):
         Array containing points in spherical coordinates
         (sph_theta, sph_phi, sph_radius, theta, radius,
         sph_theta_besa, sph_phi_besa)
-        
+
     See Also
     --------
     https://github.com/sccn/eeglab/blob/develop/functions/sigprocfunc/convertlocs.m
-    
+
     https://www.mathworks.com/help/matlab/ref/cart2sph.html
     """  # noqa: E501
 
@@ -73,10 +73,10 @@ def _xyz_cart_to_eeglab_sph(x, y, z):
 
 def cart_to_eeglab_sph(cart):
     """Convert Cartesian coordinates to EEGLAB spherical coordinates.
-    Implementation is based on 
+    Implementation is based on
     `EEGLAB's convertlocs <https://github.com/sccn/eeglab/blob/develop/functions/sigprocfunc/convertlocs.m>`_
     and Matlab's `cart2sph <https://www.mathworks.com/help/matlab/ref/cart2sph.html>`_
-    
+
     Parameters
     ----------
     cart : ndarray, shape (n_points, 3)
@@ -88,7 +88,7 @@ def cart_to_eeglab_sph(cart):
         Array containing points in spherical coordinates
         (sph_theta, sph_phi, sph_radius, theta, radius,
         sph_theta_besa, sph_phi_besa)
-    
+
     See Also
     --------
     cart_to_eeglab
