@@ -49,13 +49,13 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
 
     data = data * 1e6  # convert to microvolts
 
+    # channel types
+    ch_types = np.array(ch_types) if ch_types is not None \
+        else np.repeat('', len(ch_names))
+
     if ch_locs is not None:
         # get full EEGLAB coordinates to export
         full_coords = cart_to_eeglab(ch_locs)
-
-        # channel types
-        ch_types = np.array(ch_types) if ch_types is not None \
-            else np.repeat('', len(ch_names))
 
         # convert to record arrays for MATLAB format
         chanlocs = fromarrays(
@@ -64,7 +64,7 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
                    "sph_radius", "theta", "radius",
                    "sph_theta_besa", "sph_phi_besa", "type"])
     else:
-        chanlocs = fromarrays([ch_names], names=["labels"])
+        chanlocs = fromarrays([ch_names, ch_types], names=["labels", "type"])
 
     if isinstance(ref_channels, list):
         ref_channels = " ".join(ref_channels)
