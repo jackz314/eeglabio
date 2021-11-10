@@ -81,4 +81,4 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
                             names=["type", "latency", "duration"])
         eeg_d['event'] = events
 
-    savemat(fname, eeg_d, appendmat=False)
+    savemat(str(fname), eeg_d, appendmat=False)

@@ -117,4 +117,4 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
                  icawinv=[],
                  icasphere=[],
                  icaweights=[])
-    savemat(fname, eeg_d, appendmat=False)
+    savemat(str(fname), eeg_d, appendmat=False)
