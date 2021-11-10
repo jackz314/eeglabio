@@ -189,11 +189,6 @@ def export_mne_raw(inst, fname):
         cart_coords = None
 
     ch_types = inst.get_channel_types()
-    ch_type_mapping = {'eeg': 'EEG', 'mag': 'MEG', 'grad': 'MEG', 'eog': 'EOG',
-                       'ecg': 'ECG', 'stim': 'Events'}
-    ch_types = [ch_type_mapping[ch] if ch in ch_type_mapping else ''
-                for ch in ch_types]
-
     annotations = [inst.annotations.description, inst.annotations.onset,
                    inst.annotations.duration]
     export_set(fname, inst.get_data(), inst.info['sfreq'],
