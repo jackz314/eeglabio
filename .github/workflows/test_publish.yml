@@ -27,7 +27,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install mne flake8 pytest twine
+        pip install mne flake8 pytest twine pymatreader
         pip install -r requirements.txt
         pip install -e .
       shell: bash -el {0}
