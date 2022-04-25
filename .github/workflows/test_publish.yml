@@ -29,6 +29,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install mne flake8 pytest
         pip install -r requirements.txt
+      shell: bash -el {0}
     - name: Lint
       run: |
         flake8 .
@@ -40,6 +41,11 @@ jobs:
       run: |
         pip install setuptools wheel twine
         python setup.py sdist bdist_wheel
+      shell: bash -el {0}
+    - name: Test sdist
+      run: |
+        pip install dist/*.tar.gz
+      shell: bash -el {0}
     - name: Publish to Test PyPI
       if: github.event_name == 'push' && github.ref == 'refs/heads/stable'
       env:
