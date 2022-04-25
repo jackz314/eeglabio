@@ -6,7 +6,7 @@ from .utils import cart_to_eeglab
 
 
 def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
-               ref_channels="common"):
+               ref_channels="common", ch_types=None):
     """Export continuous raw data to EEGLAB's .set format.
 
     Parameters
@@ -34,6 +34,8 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
         specific reference set. Note that this parameter is only used to inform
         EEGLAB of the existing reference, this method will not reference the
         data for you.
+    ch_types : list of str | None
+        Channel types e.g. ‘EEG’, ‘MEG’, ‘EMG’, ‘ECG’, ‘Events’, ..
 
     See Also
     --------
@@ -47,18 +49,22 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
 
     data = data * 1e6  # convert to microvolts
 
+    # channel types
+    ch_types = np.array(ch_types) if ch_types is not None \
+        else np.repeat('', len(ch_names))
+
     if ch_locs is not None:
         # get full EEGLAB coordinates to export
         full_coords = cart_to_eeglab(ch_locs)
 
         # convert to record arrays for MATLAB format
         chanlocs = fromarrays(
-            [ch_names, *full_coords.T, np.repeat('', len(ch_names))],
+            [ch_names, *full_coords.T, ch_types],
             names=["labels", "X", "Y", "Z", "sph_theta", "sph_phi",
                    "sph_radius", "theta", "radius",
                    "sph_theta_besa", "sph_phi_besa", "type"])
     else:
-        chanlocs = fromarrays([ch_names], names=["labels"])
+        chanlocs = fromarrays([ch_names, ch_types], names=["labels", "type"])
 
     if isinstance(ref_channels, list):
         ref_channels = " ".join(ref_channels)
@@ -75,4 +81,4 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
                             names=["type", "latency", "duration"])
         eeg_d['event'] = events
 
-    savemat(fname, eeg_d, appendmat=False)
+    savemat(str(fname), eeg_d, appendmat=False)
