@@ -30,6 +30,7 @@ jobs:
         pip install mne flake8 pytest twine pymatreader
         pip install -r requirements.txt
         pip install -e .
+        mne sys_info -d
       shell: bash -el {0}
     - name: Lint
       run: |
