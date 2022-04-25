@@ -11,7 +11,7 @@ with open(os.path.join('eeglabio', '_version.py'), 'r') as fid:
             version = line.split('=')[1].strip().strip("'")
             break
 if version is None:
-    version = "0.0.1"
+    raise RuntimeError('Could not obtain version')
 
 with open("requirements.txt") as f:
     requires = f.read().splitlines()
@@ -38,7 +38,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     packages=setuptools.find_packages(exclude=("*tests",)),
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     include_package_data=True,
     install_requires=requires,
     keywords="EEG MEG MNE EEGLAB",
