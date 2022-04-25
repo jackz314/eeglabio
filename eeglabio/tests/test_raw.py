@@ -1,6 +1,7 @@
 from os import path as op
 from pathlib import Path
 
+import pytest
 import numpy as np
 from mne.io import read_raw_fif, read_raw_eeglab
 from numpy.testing import assert_allclose
