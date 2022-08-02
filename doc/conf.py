@@ -28,7 +28,7 @@ if version is None:
 # -- Project information -----------------------------------------------------
 
 project = 'eeglabio'
-copyright = '2021, Jack Zhang'
+copyright = '2022, Jack Zhang'
 author = 'Jack Zhang'
 
 # The full version, including alpha/beta/rc tags

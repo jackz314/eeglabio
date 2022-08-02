@@ -151,9 +151,14 @@ def export_mne_epochs(inst, fname):
     else:
         cart_coords = None
 
+    if len(inst.annotations) > 0:
+        annot = [inst.annotations.description, inst.annotations.onset,
+                 inst.annotations.duration]
+    else:
+        annot = None
     export_set(fname, inst.get_data(), inst.info['sfreq'], inst.events,
                inst.tmin, inst.tmax, inst.ch_names, inst.event_id,
-               cart_coords)
+               cart_coords, annot)
 
 
 def export_mne_raw(inst, fname):

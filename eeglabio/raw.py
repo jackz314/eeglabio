@@ -24,7 +24,7 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
         Array containing channel locations in Cartesian coordinates (x, y, z)
     annotations : list, shape (3, n_annotations)
         List containing three annotation subarrays:
-        first array (str) is description,
+        first array (str) is description/name,
         second array (float) is onset (starting time in seconds),
         third array (float) is duration (in seconds)
         This roughly follows MNE's Annotations structure.
@@ -74,6 +74,7 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
                  xmax=float(data.shape[1] / sfreq), ref=ref_channels,
                  chanlocs=chanlocs, icawinv=[], icasphere=[], icaweights=[])
 
+    # convert annotations to events
     if annotations is not None:
         events = fromarrays([annotations[0],
                              annotations[1] * sfreq + 1,

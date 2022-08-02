@@ -6,7 +6,7 @@ from .utils import cart_to_eeglab
 
 
 def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
-               ch_locs=None, ref_channels="common"):
+               ch_locs=None, annotations=None, ref_channels="common"):
     """Export epoch data to EEGLAB's .set format.
 
     Parameters
@@ -34,6 +34,12 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
         If None, event names will default to string versions of the event ids.
     ch_locs : numpy.ndarray, shape (n_channels, 3)
         Array containing channel locations in Cartesian coordinates (x, y, z)
+    annotations : list, shape (3, n_annotations)
+        List containing three annotation subarrays:
+        first array (str) is description/name,
+        second array (float) is onset (starting time in seconds),
+        third array (float) is duration (in seconds)
+        This roughly follows MNE's Annotations structure.
     ref_channels : list of str | str
         The name(s) of the channel(s) used to construct the reference,
         'average' for average reference, or 'common' (default) when there's no
@@ -79,7 +85,7 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
 
     # EEGLAB latency, in units of data sample points
     # ev_lat = [int(n) for n in self.events[:, 0]]
-    ev_lat = events[:, 0]
+    ev_lat = events[:, 0].astype(np.int64)  # ensure same int type (int64) as duration
 
     # event durations should all be 0 except boundaries which we don't have
     ev_dur = np.zeros((trials,), dtype=np.int64)
@@ -87,11 +93,35 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
     # indices of epochs each event belongs to
     ev_epoch = np.arange(1, trials + 1)
 
+    # merge annotations into events array
+    if annotations is not None:
+        annot_types = annotations[0]
+        annot_lat = np.array(annotations[1]) * sfreq + 1  # +1 for eeglab quirk
+        annot_dur = np.array(annotations[2]) * sfreq
+        # epoch number = sample / epoch len + 1
+        annot_epoch = annot_lat // data.shape[1] + 1
+        all_types = np.append(ev_types, annot_types)
+        all_lat = np.append(ev_lat, annot_lat)
+        all_dur = np.append(ev_dur, annot_dur)
+        all_epoch = np.append(ev_epoch, annot_epoch)
+
+        # sort based on latency
+        order = all_lat.argsort()
+        all_types = all_types[order]
+        all_lat = all_lat[order]
+        all_dur = all_dur[order]
+        all_epoch = all_epoch[order]
+    else:
+        all_types = ev_types
+        all_lat = ev_lat
+        all_dur = ev_dur
+        all_epoch = ev_epoch
+
     # EEGLAB events format, also used for distinguishing epochs/trials
-    events = fromarrays([ev_types, ev_lat, ev_dur, ev_epoch],
+    events = fromarrays([all_types, all_lat, all_dur, all_epoch],
                         names=["type", "latency", "duration", "epoch"])
 
-    # same as the indices for event epoch, except need to use array
+    # construct epochs array, same as the indices for event epoch, except need to use array
     ep_event = [np.array(n) for n in ev_epoch]
     ep_lat = [np.array(n) for n in ev_lat]
     ep_types = [np.array(n) for n in ev_types]
