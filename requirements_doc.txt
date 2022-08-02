@@ -1,6 +1,6 @@
-sphinx==3.5.4
-numpydoc==1.1.0
-pydata-sphinx-theme==0.6.0
+sphinx!=4.1.0
+numpydoc==1.4.0
+pydata-sphinx-theme==0.9.0
 sphinx_copybutton
 # readthedocs don't work without these
 numpy
