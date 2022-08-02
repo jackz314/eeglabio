@@ -85,7 +85,8 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
 
     # EEGLAB latency, in units of data sample points
     # ev_lat = [int(n) for n in self.events[:, 0]]
-    ev_lat = events[:, 0].astype(np.int64)  # ensure same int type (int64) as duration
+    # ensure same int type (int64) as duration
+    ev_lat = events[:, 0].astype(np.int64)
 
     # event durations should all be 0 except boundaries which we don't have
     ev_dur = np.zeros((trials,), dtype=np.int64)
@@ -121,7 +122,8 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
     events = fromarrays([all_types, all_lat, all_dur, all_epoch],
                         names=["type", "latency", "duration", "epoch"])
 
-    # construct epochs array, same as the indices for event epoch, except need to use array
+    # construct epochs array
+    # same as the indices for event epoch, except use array
     ep_event = [np.array(n) for n in ev_epoch]
     ep_lat = [np.array(n) for n in ev_lat]
     ep_types = [np.array(n) for n in ev_types]
