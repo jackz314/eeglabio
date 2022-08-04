@@ -97,7 +97,7 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
     # merge annotations into events array
     if annotations is not None:
         annot_types = annotations[0]
-        annot_lat = np.array(annotations[1]) * sfreq + 1  # +1 for eeglab quirk
+        annot_lat = np.array(annotations[1]) * sfreq + 1  # +1 for eeglab
         annot_dur = np.array(annotations[2]) * sfreq
         # epoch number = sample / epoch len + 1
         annot_epoch = annot_lat // data.shape[1] + 1
