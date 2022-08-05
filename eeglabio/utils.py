@@ -151,7 +151,7 @@ def export_mne_epochs(inst, fname):
     else:
         cart_coords = None
 
-    if len(inst.annotations) > 0:
+    if inst.annotations is not None and len(inst.annotations) > 0:
         annot = [inst.annotations.description, inst.annotations.onset,
                  inst.annotations.duration]
     else:

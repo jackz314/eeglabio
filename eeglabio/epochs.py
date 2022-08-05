@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from numpy.core.records import fromarrays
 from scipy.io import savemat
@@ -82,9 +84,9 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
         ev_types = [event_type_d[ev[2]] for ev in events]
     else:
         ev_types = [str(ev[2]) for ev in events]
+    ev_types = np.array(ev_types)
 
     # EEGLAB latency, in units of data sample points
-    # ev_lat = [int(n) for n in self.events[:, 0]]
     # ensure same int type (int64) as duration
     ev_lat = events[:, 0].astype(np.int64)
 
@@ -93,6 +95,10 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
 
     # indices of epochs each event belongs to
     ev_epoch = ev_lat // data.shape[1] + 1
+    if len(ev_epoch) > 0 and max(ev_epoch) > trials:  # probably due to shifted/wrong events latency
+        # attempt to fix it by reverting to simple arange
+        ev_epoch = np.arange(1, trials + 1)
+        warnings.warn("Invalid event latencies, ignoring for export.")
 
     # merge annotations into events array
     if annotations is not None:
