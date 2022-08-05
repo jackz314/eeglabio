@@ -95,7 +95,8 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
 
     # indices of epochs each event belongs to
     ev_epoch = ev_lat // data.shape[1] + 1
-    if len(ev_epoch) > 0 and max(ev_epoch) > trials:  # probably due to shifted/wrong events latency
+    if len(ev_epoch) > 0 and max(ev_epoch) > trials:
+        # probably due to shifted/wrong events latency
         # attempt to fix it by reverting to simple arange
         ev_epoch = np.arange(1, trials + 1)
         warnings.warn("Invalid event latencies, ignoring for export.")
@@ -137,7 +138,7 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
                         epoch_start_idx)
     # starting latency for each epoch in seconds
     ep_lat_offset = (all_epoch - 1) * data.shape[1] / sfreq
-    all_lat_shifted = all_lat / sfreq - ep_lat_offset  # shifted rel to ep onset
+    all_lat_shifted = all_lat / sfreq - ep_lat_offset  # shifted rel to epoch
     # convert lat, pos, type to cell arrays by converting to object arrays
     ep_lat = np.split(all_lat_shifted.astype(dtype=object) * 1000,
                       epoch_start_idx)
