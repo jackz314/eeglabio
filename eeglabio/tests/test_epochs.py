@@ -1,14 +1,11 @@
-import random
-import string
 from os import path as op
 from pathlib import Path
 
-import mne
 import numpy as np
 import pytest
 from mne import read_events, pick_types, Epochs, read_epochs_eeglab
 from mne.io import read_raw_fif
-from numpy.testing import assert_allclose, assert_array_equal
+from numpy.testing import assert_allclose
 
 from eeglabio.utils import export_mne_epochs
 
