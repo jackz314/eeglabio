@@ -1,5 +1,3 @@
-import logging
-
 import numpy as np
 from numpy.core.records import fromarrays
 from scipy.io import savemat

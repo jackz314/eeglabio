@@ -10,6 +10,7 @@ _handler.setFormatter(logging.Formatter('%(pathname)s:%(lineno)d '
 logger.addHandler(_handler)
 logger.propagate = False
 
+
 def _xyz_cart_to_eeglab_sph(x, y, z):
     """Convert Cartesian coordinates to EEGLAB spherical coordinates.
 
