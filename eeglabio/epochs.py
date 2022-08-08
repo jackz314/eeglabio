@@ -1,10 +1,10 @@
-import warnings
+import logging
 
 import numpy as np
 from numpy.core.records import fromarrays
 from scipy.io import savemat
 
-from .utils import cart_to_eeglab
+from .utils import cart_to_eeglab, logger
 
 
 def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
@@ -62,7 +62,7 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
     data = data * 1e6  # convert to microvolts
     data = np.moveaxis(data, 0, 2)  # convert to EEGLAB 3D format
 
-    trials = len(events)  # epoch count in EEGLAB
+    ch_cnt, epoch_len, trials = data.shape
 
     if ch_locs is not None:
         # get full EEGLAB coordinates to export
@@ -91,39 +91,66 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
     ev_lat = events[:, 0].astype(np.int64)
 
     # event durations should all be 0 except boundaries which we don't have
-    ev_dur = np.zeros((trials,), dtype=np.int64)
+    ev_dur = np.zeros_like(ev_lat, dtype=np.int64)
 
     # indices of epochs each event belongs to
-    ev_epoch = ev_lat // data.shape[1] + 1
+    ev_epoch = ev_lat // epoch_len + 1
     if len(ev_epoch) > 0 and max(ev_epoch) > trials:
         # probably due to shifted/wrong events latency
-        # attempt to fix it by reverting to simple arange
+        # reset events to start at the beginning of each epoch
         ev_epoch = np.arange(1, trials + 1)
-        warnings.warn("Invalid event latencies, ignoring for export.")
+        ev_lat = (ev_epoch - 1) * epoch_len
+        logger.warning("Invalid event latencies, ignored for export.")
 
     # merge annotations into events array
     if annotations is not None:
-        annot_types = annotations[0]
+        data_len = epoch_len * trials
         annot_lat = np.array(annotations[1]) * sfreq + 1  # +1 for eeglab
-        annot_dur = np.array(annotations[2]) * sfreq
+        valid_lat_mask = annot_lat <= data_len
+        if not np.all(valid_lat_mask):
+            # at least some annotations have invalid onsets, discardd
+            logger.warning("Some or all annotations have invalid onsets, "
+                           "discarded for export.")
+
+        annot_lat = annot_lat[valid_lat_mask]
+        annot_types = np.array(annotations[0])[valid_lat_mask]
+        annot_dur = np.array(annotations[2])[valid_lat_mask] * sfreq
         # epoch number = sample / epoch len + 1
-        annot_epoch = annot_lat // data.shape[1] + 1
+        annot_epoch = annot_lat // epoch_len + 1
+
         all_types = np.append(ev_types, annot_types)
         all_lat = np.append(ev_lat, annot_lat)
         all_dur = np.append(ev_dur, annot_dur)
         all_epoch = np.append(ev_epoch, annot_epoch)
-
-        # sort based on latency
-        order = all_lat.argsort()
-        all_types = all_types[order]
-        all_lat = all_lat[order]
-        all_dur = all_dur[order]
-        all_epoch = all_epoch[order]
     else:
         all_types = ev_types
         all_lat = ev_lat
         all_dur = ev_dur
         all_epoch = ev_epoch
+
+    # check there's at least one event per epoch
+    uniq_epochs = np.unique(all_epoch)
+    required_epochs = np.arange(1, trials + 1)
+    if not np.array_equal(uniq_epochs, required_epochs):
+        # doesn't meet the requirement of at least one event per epoch
+        # add dummy events to satisfy this
+        logger.warning("Events doesn't meet the requirement of at least one "
+                       "event per epoch, adding dummy events")
+        missing_mask = np.isin(required_epochs, uniq_epochs,
+                               assume_unique=True, invert=True)
+        missing_epochs = required_epochs[missing_mask]
+        all_types = np.append(all_types, np.full(len(missing_epochs), "dummy"))
+        # set dummy events to start at the beginning of each epoch
+        all_lat = np.append(all_lat, (missing_epochs - 1) * epoch_len)
+        all_dur = np.append(all_dur, np.zeros_like(missing_epochs))
+        all_epoch = np.append(all_epoch, missing_epochs)
+
+    # sort based on latency
+    order = all_lat.argsort()
+    all_types = all_types[order]
+    all_lat = all_lat[order]
+    all_dur = all_dur[order]
+    all_epoch = all_epoch[order]
 
     # EEGLAB events format, also used for distinguishing epochs/trials
     events = fromarrays([all_types, all_lat, all_dur, all_epoch],
@@ -134,10 +161,10 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
     # make sure epoch count is increasing (it should be)
     # splitting code from https://stackoverflow.com/a/43094244/8170714
     epoch_start_idx = np.unique(all_epoch, return_index=True)[1][1:]  # skip 0
-    ep_event = np.split(np.arange(1, len(all_epoch)+1, dtype=np.double),
+    ep_event = np.split(np.arange(1, len(all_epoch) + 1, dtype=np.double),
                         epoch_start_idx)
     # starting latency for each epoch in seconds
-    ep_lat_offset = (all_epoch - 1) * data.shape[1] / sfreq
+    ep_lat_offset = (all_epoch - 1) * epoch_len / sfreq
     all_lat_shifted = all_lat / sfreq - ep_lat_offset  # shifted rel to epoch
     # convert lat, pos, type to cell arrays by converting to object arrays
     ep_lat = np.split(all_lat_shifted.astype(dtype=object) * 1000,
@@ -162,7 +189,7 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
     eeg_d = dict(data=data,
                  setname=fname,
                  nbchan=data.shape[0],
-                 pnts=float(data.shape[1]),
+                 pnts=float(epoch_len),
                  trials=trials,
                  srate=sfreq,
                  xmin=float(tmin),
