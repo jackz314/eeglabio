@@ -86,7 +86,7 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
 
     # EEGLAB latency, in units of data sample points
     # ensure same int type (int64) as duration
-    ev_lat = events[:, 0].astype(np.int64)
+    ev_lat = events[:, 0].astype(np.int64) + 1  # +1 for eeglab indexing
 
     # event durations should all be 0 except boundaries which we don't have
     ev_dur = np.zeros_like(ev_lat, dtype=np.int64)
@@ -114,7 +114,7 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
         annot_types = np.array(annotations[0])[valid_lat_mask]
         annot_dur = np.array(annotations[2])[valid_lat_mask] * sfreq
         # epoch number = sample / epoch len + 1
-        annot_epoch = annot_lat // epoch_len + 1
+        annot_epoch = (annot_lat - 1) // epoch_len + 1  # -1 switch back
 
         all_types = np.append(ev_types, annot_types)
         all_lat = np.append(ev_lat, annot_lat)
