@@ -10,7 +10,8 @@ Install from [PyPI](https://pypi.org/project/eeglabio):
 pip install eeglabio
 ```
 
-Install from [Test PyPI](https://test.pypi.org/project/eeglabio) (unreleased):
+Install from [Test PyPI](https://test.pypi.org/project/eeglabio) (built from 
+[stable](https://github.com/jackz314/eeglabio/tree/stable) branch):
 
 ```shell
 pip install -i https://test.pypi.org/simple/ eeglabio
