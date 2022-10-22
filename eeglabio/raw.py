@@ -76,10 +76,19 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
     if isinstance(ref_channels, list):
         ref_channels = " ".join(ref_channels)
 
-    eeg_d = dict(data=data, setname=fname, nbchan=data.shape[0],
-                 pnts=float(data.shape[1]), trials=1, srate=sfreq, xmin=0.0,
-                 xmax=float(data.shape[1] / sfreq), ref=ref_channels,
-                 chanlocs=chanlocs, icawinv=[], icasphere=[], icaweights=[])
+    eeg_d = dict(data=data,
+                 setname=fname,
+                 nbchan=float(data.shape[0]),
+                 pnts=float(data.shape[1]),
+                 trials=1.0,
+                 srate=float(sfreq),
+                 xmin=0.0,
+                 xmax=float(data.shape[1] / sfreq),
+                 ref=ref_channels,
+                 chanlocs=chanlocs,
+                 icawinv=[],
+                 icasphere=[],
+                 icaweights=[])
 
     # convert annotations to events
     if annotations is not None:

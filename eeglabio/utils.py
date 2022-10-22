@@ -207,4 +207,5 @@ def export_mne_raw(inst, fname, precision="single"):
     annotations = [inst.annotations.description, inst.annotations.onset,
                    inst.annotations.duration]
     export_set(fname, inst.get_data(), inst.info['sfreq'], inst.ch_names,
-               cart_coords, annotations, ch_types=ch_types, precision=precision)
+               cart_coords, annotations, ch_types=ch_types,
+               precision=precision)
