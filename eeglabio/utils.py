@@ -132,7 +132,7 @@ def cart_to_eeglab(cart):
     return np.append(cart, cart_to_eeglab_sph(cart), 1)  # hstack
 
 
-def export_mne_epochs(inst, fname):
+def export_mne_epochs(inst, fname, precision="single"):
     """Export MNE's Epochs instance to EEGLAB's .set format using
     :func:`.epochs.export_set`.
 
@@ -168,10 +168,10 @@ def export_mne_epochs(inst, fname):
         annot = None
     export_set(fname, inst.get_data(), inst.info['sfreq'], inst.events,
                inst.tmin, inst.tmax, inst.ch_names, inst.event_id,
-               cart_coords, annot)
+               cart_coords, annot, precision=precision)
 
 
-def export_mne_raw(inst, fname):
+def export_mne_raw(inst, fname, precision="single"):
     """Export MNE's Raw instance to EEGLAB's .set format using
     :func:`.raw.export_set`.
 
@@ -206,5 +206,5 @@ def export_mne_raw(inst, fname):
     ch_types = inst.get_channel_types()
     annotations = [inst.annotations.description, inst.annotations.onset,
                    inst.annotations.duration]
-    export_set(fname, inst.get_data(), inst.info['sfreq'],
-               inst.ch_names, cart_coords, annotations, ch_types=ch_types)
+    export_set(fname, inst.get_data(), inst.info['sfreq'], inst.ch_names,
+               cart_coords, annotations, ch_types=ch_types, precision=precision)

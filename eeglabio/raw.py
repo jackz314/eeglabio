@@ -6,7 +6,7 @@ from .utils import cart_to_eeglab
 
 
 def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
-               ref_channels="common", ch_types=None):
+               ref_channels="common", ch_types=None, precision="single"):
     """Export continuous raw data to EEGLAB's .set format.
 
     Parameters
@@ -36,6 +36,8 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
         data for you.
     ch_types : list of str | None
         Channel types e.g. ‘EEG’, ‘MEG’, ‘EMG’, ‘ECG’, ‘Events’, ..
+    precision : "single" or "double"
+        Precision of the exported data (specifically EEG.data in EEGLAB)
 
     See Also
     --------
@@ -48,6 +50,11 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
     """
 
     data = data * 1e6  # convert to microvolts
+
+    if precision not in ("single", "double"):
+        raise ValueError(f"Unsupported precision '{precision}', "
+                         f"supported precisions are 'single' and 'double'.")
+    data = data.astype(precision)
 
     # channel types
     ch_types = np.array(ch_types) if ch_types is not None \

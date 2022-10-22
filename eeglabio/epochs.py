@@ -6,7 +6,8 @@ from .utils import cart_to_eeglab, logger
 
 
 def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
-               ch_locs=None, annotations=None, ref_channels="common"):
+               ch_locs=None, annotations=None, ref_channels="common",
+               precision="single"):
     """Export epoch data to EEGLAB's .set format.
 
     Parameters
@@ -46,6 +47,8 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
         specific reference set. Note that this parameter is only used to inform
         EEGLAB of the existing reference, this method will not reference the
         data for you.
+    precision : "single" or "double"
+        Precision of the exported data (specifically EEG.data in EEGLAB)
 
     See Also
     --------
@@ -59,6 +62,11 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
 
     data = data * 1e6  # convert to microvolts
     data = np.moveaxis(data, 0, 2)  # convert to EEGLAB 3D format
+
+    if precision not in ("single", "double"):
+        raise ValueError(f"Unsupported precision '{precision}', "
+                         f"supported precisions are 'single' and 'double'.")
+    data = data.astype(precision)
 
     ch_cnt, epoch_len, trials = data.shape
 
