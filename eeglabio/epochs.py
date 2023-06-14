@@ -104,7 +104,7 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
     if len(ev_epoch) > 0 and max(ev_epoch) > trials:
         # probably due to shifted/wrong events latency
         # reset events to start at the beginning of each epoch
-        ev_epoch = np.arange(1, trials + 1)
+        ev_epoch = np.arange(1, trials + 1, dtype=np.int64)
         ev_lat = (ev_epoch - 1) * epoch_len
         logger.warning("Invalid event latencies, ignored for export.")
 
