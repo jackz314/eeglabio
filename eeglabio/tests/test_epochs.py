@@ -39,7 +39,7 @@ def test_export_set(tmpdir, preload):
     # epochs.set_annotations(annot)
     temp_fname = op.join(str(tmpdir), 'test_epochs.set')
     export_mne_epochs(epochs, temp_fname)
-    epochs_read = read_epochs_eeglab(temp_fname)
+    epochs_read = read_epochs_eeglab(temp_fname, montage_units='m')
     assert epochs.ch_names == epochs_read.ch_names
     cart_coords = np.array([d['loc'][:3]
                             for d in epochs.info['chs']])  # just xyz
