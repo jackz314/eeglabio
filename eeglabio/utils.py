@@ -1,3 +1,4 @@
+import pathlib
 import logging
 
 import numpy as np
@@ -178,18 +179,27 @@ def export_mne_raw(inst, fname, precision="single"):
     Parameters
     ----------
     inst : mne.io.BaseRaw
-        Raw instance to save
+        Raw instance to save.
     fname : str
         Name of the export file.
     """
     from .raw import export_set
+
     # load data first
     inst.load_data()
 
     # remove extra epoc and STI channels
     chs_drop = [ch for ch in ['epoc'] if ch in inst.ch_names]
-    if 'STI 014' in inst.ch_names and \
-            not (inst.filenames[0].endswith('.fif')):
+
+    if isinstance(inst.filenames[0], pathlib.Path):
+        notfif = not (inst.filenames[0].suffix.endswith('.fif'))
+    elif isinstance(inst.filenames[0], str):
+        notfif = not inst.filenames[0].endswith('.fif')
+    else:
+        # assume not fif
+        notfif = True
+
+    if 'STI 014' in inst.ch_names and notfif:
         chs_drop.append('STI 014')
     inst.drop_channels(chs_drop)
 
