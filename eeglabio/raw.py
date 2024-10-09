@@ -35,7 +35,8 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
         EEGLAB of the existing reference, this method will not reference the
         data for you.
     ch_types : list of str | None
-        Channel types e.g. ‘EEG’, ‘MEG’, ‘EMG’, ‘ECG’, ‘Events’, ..
+        List of channel types, for example ``"EEG"``, ``"MEG"``, ``"ECG"``,
+        ``"Events"``.
     precision : "single" or "double"
         Precision of the exported data (specifically EEG.data in EEGLAB)
 
