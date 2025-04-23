@@ -1,6 +1,10 @@
 import numpy as np
-from numpy.core.records import fromarrays
 from scipy.io import savemat
+
+try:
+    from numpy.rec import fromarrays  # NumPy 2.0+
+except ImportError:
+    from numpy.core.records import fromarrays  # NumPy <2.0
 
 from .utils import cart_to_eeglab
 
