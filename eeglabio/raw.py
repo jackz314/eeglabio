@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.io import savemat
+from hdf5storage import savemat
 
 try:
     from numpy.rec import fromarrays  # NumPy 2.0+
@@ -52,6 +52,8 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
     -----
     Channel locations are expanded to the full EEGLAB format.
     For more details see :func:`.utils.cart_to_eeglab_sph`.
+
+    Since 0.2.0, data is saved in matlabs v7.3 hdf5 format to support files large than 2GB
     """
 
     data = data * 1e6  # convert to microvolts
