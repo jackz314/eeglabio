@@ -5,3 +5,4 @@ sphinx_copybutton
 # readthedocs don't work without these
 numpy
 scipy
+hdf5storage
