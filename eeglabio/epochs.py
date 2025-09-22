@@ -7,7 +7,7 @@ from .utils import cart_to_eeglab, logger
 
 def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
                ch_locs=None, annotations=None, ref_channels="common",
-               precision="single"):
+               precision="single", first_samp=0, n_trials=None):
     """Export epoch data to EEGLAB's .set format.
 
     Parameters
@@ -69,6 +69,9 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
     data = data.astype(precision)
 
     ch_cnt, epoch_len, trials = data.shape
+    # E.g. in MNE, some epochs may be dropped before export. So let the user override.
+    if n_trials is not None:
+        trials = n_trials
 
     if ch_locs is not None:
         # get full EEGLAB coordinates to export
@@ -94,7 +97,7 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
 
     # EEGLAB latency, in units of data sample points
     # ensure same int type (int64) as duration
-    ev_lat = events[:, 0].astype(np.int64) + 1  # +1 for eeglab indexing
+    ev_lat = events[:, 0].astype(np.int64) - first_samp + 1  # +1 for eeglab indexing
 
     # event durations should all be 0 except boundaries which we don't have
     ev_dur = np.zeros_like(ev_lat, dtype=np.int64)
