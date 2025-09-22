@@ -1,5 +1,9 @@
 import numpy as np
-from numpy.core.records import fromarrays
+try:
+    from numpy.rec import fromarrays  # NumPy 2.0+
+except ImportError:
+    from numpy.core.records import fromarrays # NumPy <2.0
+
 from scipy.io import savemat
 
 from .utils import cart_to_eeglab, logger
