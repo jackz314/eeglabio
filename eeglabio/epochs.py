@@ -69,7 +69,8 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
     data = data.astype(precision)
 
     ch_cnt, epoch_len, trials = data.shape
-    # E.g. in MNE, some epochs may be dropped before export. So let the user override.
+    # The array shape won't match the number of trials if epochs were dropped.
+    # So let the user override.
     if n_trials is not None:
         trials = n_trials
 
@@ -97,7 +98,8 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
 
     # EEGLAB latency, in units of data sample points
     # ensure same int type (int64) as duration
-    ev_lat = events[:, 0].astype(np.int64) - first_samp + 1  # +1 for eeglab indexing
+    # -first_samp to handle latency offset, +1 for eeglab indexing
+    ev_lat = events[:, 0].astype(np.int64) - first_samp + 1
 
     # event durations should all be 0 except boundaries which we don't have
     ev_dur = np.zeros_like(ev_lat, dtype=np.int64)
