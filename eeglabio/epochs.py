@@ -7,7 +7,7 @@ from .utils import cart_to_eeglab, logger
 
 def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
                ch_locs=None, annotations=None, ref_channels="common",
-               precision="single"):
+               precision="single", epoch_indices=None):
     """Export epoch data to EEGLAB's .set format.
 
     Parameters
@@ -100,7 +100,11 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
     ev_dur = np.zeros_like(ev_lat, dtype=np.int64)
 
     # indices of epochs each event belongs to
-    ev_epoch = ev_lat // epoch_len + 1
+    if epoch_indices is None:
+        ev_epoch = ev_lat // epoch_len + 1
+    else:
+        assert len(epoch_indices) == len(ev_lat)  # TODO: remove or improve
+        ev_epoch = epoch_indices
     if len(ev_epoch) > 0 and max(ev_epoch) > trials:
         # probably due to shifted/wrong events latency
         # reset events to start at the beginning of each epoch
@@ -136,7 +140,10 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
 
     # check there's at least one event per epoch
     uniq_epochs = np.unique(all_epoch)
-    required_epochs = np.arange(1, trials + 1)
+    if epoch_indices is None:
+        required_epochs = np.arange(1, trials + 1)
+    else:
+        required_epochs = epoch_indices
     if not np.array_equal(uniq_epochs, required_epochs):
         # doesn't meet the requirement of at least one event per epoch
         # add dummy events to satisfy this
