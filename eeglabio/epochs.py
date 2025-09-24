@@ -57,6 +57,8 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
         this is necessary if epochs were dropped or reordered in MNE-Python,
         where events are no longer evenly aligned with epochs.
 
+        .. versionadded:: 0.1.2
+
     See Also
     --------
     .raw.export_set
