@@ -102,6 +102,7 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
     # indices of epochs each event belongs to
     ev_epoch = ev_lat // epoch_len + 1
     if epoch_indices is not None:
+        # full-slice assigment to ensure epoch_indices.shape == ev_lat.shape
         ev_epoch[:] = epoch_indices
     if len(ev_epoch) > 0 and max(ev_epoch) > trials:
         # probably due to shifted/wrong events latency
