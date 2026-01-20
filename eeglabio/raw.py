@@ -6,8 +6,7 @@ try:
 except ImportError:
     from numpy.core.records import fromarrays  # NumPy <2.0
 
-from .utils import cart_to_eeglab
-
+from .utils import cart_to_eeglab, fname_to_setname
 
 def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
                ref_channels="common", ch_types=None, precision="single"):
@@ -54,6 +53,9 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
     For more details see :func:`.utils.cart_to_eeglab_sph`.
     """
 
+    # Extact path stem for EEG.setname
+    setname = fname_to_setname(fname)
+
     data = data * 1e6  # convert to microvolts
 
     if precision not in ("single", "double"):
@@ -82,7 +84,7 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
         ref_channels = " ".join(ref_channels)
 
     eeg_d = dict(data=data,
-                 setname=fname,
+                 setname=setname,
                  nbchan=float(data.shape[0]),
                  pnts=float(data.shape[1]),
                  trials=1.0,
