@@ -6,7 +6,7 @@ except ImportError:
 
 from scipy.io import savemat
 
-from .utils import cart_to_eeglab, logger
+from .utils import cart_to_eeglab, fname_to_setname, logger
 
 
 def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
@@ -72,6 +72,9 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
     Channel locations are expanded to the full EEGLAB format.
     For more details see :func:`.utils.cart_to_eeglab_sph`.
     """
+
+    # Extact path stem for EEG.setname
+    setname = fname_to_setname(fname)
 
     data = data * 1e6  # convert to microvolts
     data = np.moveaxis(data, 0, 2)  # convert to EEGLAB 3D format
@@ -212,7 +215,7 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
         ref_channels = " ".join(ref_channels)
 
     eeg_d = dict(data=data,
-                 setname=fname,
+                 setname=setname,
                  nbchan=data.shape[0],
                  pnts=float(epoch_len),
                  trials=float(trials),

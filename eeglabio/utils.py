@@ -1,4 +1,4 @@
-import pathlib
+from pathlib import Path
 import logging
 
 import numpy as np
@@ -191,7 +191,7 @@ def export_mne_raw(inst, fname, precision="single"):
     # remove extra epoc and STI channels
     chs_drop = [ch for ch in ['epoc'] if ch in inst.ch_names]
 
-    if isinstance(inst.filenames[0], pathlib.Path):
+    if isinstance(inst.filenames[0], Path):
         notfif = not (inst.filenames[0].suffix.endswith('.fif'))
     elif isinstance(inst.filenames[0], str):
         notfif = not inst.filenames[0].endswith('.fif')
@@ -219,3 +219,21 @@ def export_mne_raw(inst, fname, precision="single"):
     export_set(fname, inst.get_data(), inst.info['sfreq'], inst.ch_names,
                cart_coords, annotations, ch_types=ch_types,
                precision=precision)
+
+
+def fname_to_setname(fname):
+    """
+    Derive a portable EEGLAB setname from an output filename or path.
+
+    Rationale
+    ---------
+    Users often pass absolute paths to export functions. If that path
+    propagates into EEGLAB metadata, the dataset becomes non-portable
+    (e.g., EEG.setname shows '/full/path/to/file.set').
+
+    This helper ensures:
+      - setname is based only on the basename
+      - no directory components
+      - no file extension
+    """
+    return Path(fname).stem
