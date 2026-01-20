@@ -8,6 +8,7 @@ except ImportError:
 
 from .utils import cart_to_eeglab, fname_to_setname
 
+
 def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
                ref_channels="common", ch_types=None, precision="single"):
     """Export continuous raw data to EEGLAB's .set format.
