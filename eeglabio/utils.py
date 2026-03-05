@@ -172,7 +172,7 @@ def export_mne_epochs(inst, fname, precision="single"):
                cart_coords, annot, precision=precision)
 
 
-def export_mne_raw(inst, fname, precision="single"):
+def export_mne_raw(inst, fname, precision="single", ):
     """Export MNE's Raw instance to EEGLAB's .set format using
     :func:`.raw.export_set`.
 
@@ -216,8 +216,8 @@ def export_mne_raw(inst, fname, precision="single"):
     ch_types = inst.get_channel_types()
     annotations = [inst.annotations.description, inst.annotations.onset,
                    inst.annotations.duration]
-    export_set(fname, inst.get_data(), inst.info['sfreq'], inst.ch_names,
-               cart_coords, annotations, ch_types=ch_types,
+    export_set(fname, inst.get_data(units="uV"), inst.info['sfreq'], inst.ch_names,
+               cart_coords, annotations, ch_types=ch_types,scale_data=False,
                precision=precision)
 
 
