@@ -10,7 +10,7 @@ from .utils import cart_to_eeglab, fname_to_setname
 
 
 def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
-               ref_channels="common", ch_types=None, precision="single"):
+               ref_channels="common", ch_types=None, precision="single", scale_data=True):
     """Export continuous raw data to EEGLAB's .set format.
 
     Parameters
@@ -43,7 +43,11 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
         ``"Events"``.
     precision : "single" or "double"
         Precision of the exported data (specifically EEG.data in EEGLAB)
-
+    scale_data : bool
+        by default assumes the data are in Volt, thus scales it with 1e6 to µV
+        for eeglab format export. Scaling requires a copy of the data, increasing
+        the memory-footprint.
+    
     See Also
     --------
     .epochs.export_set
@@ -52,17 +56,27 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
     -----
     Channel locations are expanded to the full EEGLAB format.
     For more details see :func:`.utils.cart_to_eeglab_sph`.
+    
+    In case memory is an issue, provide the data with the correct scaling, and
+    precision (e.g. in µV and data.astype("single",copy=False), and set `scale_data`
+    to `False`.
     """
 
     # Extact path stem for EEG.setname
     setname = fname_to_setname(fname)
-
-    data = data * 1e6  # convert to microvolts
+    if scale_data:
+        data = data * 1e6  # convert to microvolts
 
     if precision not in ("single", "double"):
         raise ValueError(f"Unsupported precision '{precision}', "
                          f"supported precisions are 'single' and 'double'.")
-    data = data.astype(precision)
+    if scale_data:
+        # we don't need another copy if we already scaled before
+        data = data.astype(precision, copy=False)
+    else:
+        # if one wants to save even this copy, one could convert already inplace
+        # prior to calling this function
+        data = data.astype(precision, copy=True) 
 
     # channel types
     ch_types = np.array(ch_types) if ch_types is not None \
