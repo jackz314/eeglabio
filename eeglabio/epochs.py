@@ -54,9 +54,12 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
     precision : "single" or "double"
         Precision of the exported data (specifically EEG.data in EEGLAB)
     epoch_indices : numpy.ndarray or None
-        Original 0-based indices of the exported epochs. This parameter is
-        kept for compatibility; event positions are determined by the order
-        of ``data`` and ``events``.
+        1D integer array with one entry per event (same length as ``events``).
+        Each value gives the 0-based index of the exported epoch that the
+        corresponding event belongs to. This is needed when an epoch contains
+        more than one event. With one event per epoch, events are matched to
+        the data in order; non-consecutive MNE epoch selections are accepted
+        for compatibility.
 
         .. versionadded:: 0.1.2
 
@@ -83,8 +86,11 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
 
     ch_cnt, epoch_len, trials = data.shape
 
-    if len(events) != trials:
-        raise ValueError("events must contain one row per epoch")
+    if epoch_indices is None and len(events) != trials:
+        raise ValueError(
+            "The number of events must match the number of epochs in the "
+            "data when epoch_indices is not provided, but got "
+            f"{len(events)} events and {trials} epochs")
 
     if ch_locs is not None:
         # get full EEGLAB coordinates to export
@@ -108,29 +114,44 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
         ev_types = [str(ev[2]) for ev in events]
     ev_types = np.array(ev_types)
 
-    # MNE event samples refer to the original recording. EEGLAB stores event
-    # latency in the concatenated epoched data instead.
-    ev_epoch = np.arange(1, trials + 1, dtype=np.int64)
     zero_sample = int(round(-tmin * sfreq))
-    ev_lat = (ev_epoch - 1) * epoch_len + zero_sample + 1
+    if not 0 <= zero_sample < epoch_len:
+        logger.warning("The epoch window does not include time zero; events "
+                       "will be placed at the closest sample.")
+        zero_sample = min(max(zero_sample, 0), epoch_len - 1)
+    if epoch_indices is None:
+        ev_epoch = np.arange(1, trials + 1, dtype=np.int64)
+        ev_lat = (ev_epoch - 1) * epoch_len + zero_sample + 1
+    else:
+        epoch_indices = np.asarray(epoch_indices)
+        if epoch_indices.shape != (len(events),):
+            raise ValueError(
+                "epoch_indices must be a 1D array with one entry per event, "
+                f"but got shape {epoch_indices.shape} for {len(events)} "
+                "events")
+        if not np.issubdtype(epoch_indices.dtype, np.integer):
+            raise ValueError(
+                "epoch_indices must contain integers, but got dtype "
+                f"{epoch_indices.dtype}")
+        n_unique = len(np.unique(epoch_indices))
+        if len(events) == trials and n_unique == trials:
+            # MNE passes the original epoch selection here. These indices can
+            # be non-consecutive after epochs were dropped.
+            ev_epoch = np.arange(1, trials + 1, dtype=np.int64)
+            ev_lat = (ev_epoch - 1) * epoch_len + zero_sample + 1
+        else:
+            if (epoch_indices < 0).any() or (epoch_indices >= trials).any():
+                min_index = epoch_indices.min()
+                max_index = epoch_indices.max()
+                raise ValueError(
+                    "epoch_indices must be between 0 and "
+                    f"{trials - 1}, but got values from {min_index} to "
+                    f"{max_index}")
+            ev_epoch = epoch_indices.astype(np.int64) + 1
+            ev_lat = events[:, 0].astype(np.int64) + 1
 
     # event durations should all be 0 except boundaries which we don't have
     ev_dur = np.zeros_like(ev_lat, dtype=np.int64)
-
-    if epoch_indices is not None:
-        epoch_indices = np.asarray(epoch_indices)
-        if (
-            epoch_indices.shape != (trials,)
-            or len(np.unique(epoch_indices)) != trials
-        ):
-            raise ValueError(
-                "epoch_indices must contain one unique entry per epoch")
-    if len(ev_epoch) > 0 and max(ev_epoch) > trials:
-        # probably due to shifted/wrong events latency
-        # reset events to start at the beginning of each epoch
-        ev_epoch = np.arange(1, trials + 1, dtype=np.int64)
-        ev_lat = (ev_epoch - 1) * epoch_len
-        logger.warning("Invalid event latencies, ignored for export.")
 
     # merge annotations into events array
     if annotations is not None:
@@ -171,7 +192,7 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
         missing_epochs = required_epochs[missing_mask]
         all_types = np.append(all_types, np.full(len(missing_epochs), "dummy"))
         # set dummy events to start at the beginning of each epoch
-        all_lat = np.append(all_lat, (missing_epochs - 1) * epoch_len)
+        all_lat = np.append(all_lat, (missing_epochs - 1) * epoch_len + 1)
         all_dur = np.append(all_dur, np.zeros_like(missing_epochs))
         all_epoch = np.append(all_epoch, missing_epochs)
 
