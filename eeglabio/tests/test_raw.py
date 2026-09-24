@@ -2,9 +2,12 @@ from os import path as op
 from pathlib import Path
 
 import numpy as np
+import pytest
 from mne.io import read_raw_fif, read_raw_eeglab
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_array_equal
+from scipy.io import loadmat
 
+from eeglabio.raw import export_set
 from eeglabio.utils import export_mne_raw
 
 raw_fname = Path(__file__).parent / "data" / "test_raw.fif"
@@ -23,3 +26,19 @@ def test_export_set(tmpdir):
     assert_allclose(cart_coords, cart_coords_read, atol=1e-5)
     assert_allclose(raw.times, raw_read.times, atol=1e-5)
     assert_allclose(raw.get_data(), raw_read.get_data(), atol=1e-11)
+
+
+@pytest.mark.parametrize('dtype', ('U', 'O', 'T'))
+def test_annotation_strings(tmp_path, dtype):
+    """Preserve annotation text and timing across NumPy string dtypes."""
+    if dtype == 'T' and not hasattr(getattr(np, 'dtypes', None),
+                                    'StringDType'):
+        pytest.skip('StringDType requires NumPy 2')
+    names = np.array(['stimulus', 'response-long'], dtype=dtype)
+    fname = tmp_path / 'annotations.set'
+    export_set(fname, np.zeros((1, 100)), 100, ['Cz'],
+               annotations=[names, np.array([0.1, 0.2]), np.array([0., 0.05])])
+    events = loadmat(fname, squeeze_me=True, struct_as_record=False)['event']
+    assert_array_equal([event.type for event in events], names.tolist())
+    assert_allclose([event.latency for event in events], [11, 21])
+    assert_allclose([event.duration for event in events], [0, 5])

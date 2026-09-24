@@ -60,122 +60,94 @@ def test_export_set(tmpdir, preload):
     assert_allclose(epochs.get_data(), epochs_read.get_data())
 
 
-@pytest.mark.parametrize(('tmax', 'n_times'), ((0.2, 31), (0.0, 11)))
-@pytest.mark.parametrize('pass_epoch_indices', (False, True))
+@pytest.mark.parametrize(('tmin', 'tmax', 'n_times', 'expected', 'relative'), (
+    (-0.1, 0.2, 31, [11, 42, 73], 0),
+    (-0.1, 0.0, 11, [11, 22, 33], 0),
+    (0.1, 0.2, 11, [1, 12, 23], 100),
+    (-0.2, -0.1, 11, [11, 22, 33], -100),
+))
+@pytest.mark.parametrize('selection', (None, [0, 2, 4], [4, 0, 2]))
 def test_export_set_dropped_epochs(
-        tmp_path, tmax, n_times, pass_epoch_indices):
+        tmp_path, tmin, tmax, n_times, expected, relative, selection):
     """Map retained MNE events to consecutive EEGLAB epochs."""
-    sfreq = 100.0
-    n_epochs = 3
-    data = np.zeros((n_epochs, 1, n_times))
-    events = np.column_stack((
-        [100, 300, 500],
-        np.zeros(n_epochs, dtype=int),
-        [1, 2, 3],
-    ))
+    data = np.arange(3 * n_times).reshape(3, 1, n_times) * 1e-6
+    events = np.array([[100, 0, 1], [300, 0, 2], [500, 0, 3]])
+    if selection == [4, 0, 2]:
+        data, events = data[[2, 0, 1]], events[[2, 0, 1]]
     event_id = {f'event-{code}': code for code in events[:, 2]}
     fname = tmp_path / 'dropped.set'
 
-    kwargs = dict(
-        fname=fname,
-        data=data,
-        sfreq=sfreq,
-        events=events,
-        tmin=-0.1,
-        tmax=tmax,
-        ch_names=['Cz'],
-        event_id=event_id,
-    )
-    if pass_epoch_indices:
-        kwargs['epoch_indices'] = np.array([0, 2, 4])
+    kwargs = dict(fname=fname, data=data, sfreq=100, events=events,
+                  tmin=tmin, tmax=tmax, ch_names=['Cz'], event_id=event_id)
+    if selection is not None:
+        kwargs['epoch_indices'] = np.array(selection)
     export_set(**kwargs)
     epochs_read = read_epochs_eeglab(fname, verbose='error')
-
-    zero_sample = int(round(0.1 * sfreq))
-    expected = np.arange(n_epochs) * n_times + zero_sample
-
-    eeglab = loadmat(fname, squeeze_me=True, struct_as_record=False)
-    mat_events = np.atleast_1d(eeglab['event'])
-    assert_array_equal([event.latency for event in mat_events], expected + 1)
-    assert_array_equal([event.epoch for event in mat_events], [1, 2, 3])
-
-    assert_array_equal(epochs_read.events[:, 0], expected)
-    assert set(epochs_read.event_id) == set(event_id)
-
-
-def test_export_set_multiple_events(tmp_path):
-    """Preserve multiple events within an epoch."""
-    data = np.zeros((3, 1, 11))
-    events = np.column_stack((
-        [2, 8, 15, 29],
-        np.zeros(4, dtype=int),
-        [1, 2, 3, 4],
-    ))
-    fname = tmp_path / 'multiple.set'
-    export_set(
-        fname=fname,
-        data=data,
-        sfreq=100.0,
-        events=events,
-        tmin=-0.1,
-        tmax=0.0,
-        ch_names=['Cz'],
-        epoch_indices=np.array([0, 0, 1, 2]),
-    )
-
-    eeglab = loadmat(fname, squeeze_me=True, struct_as_record=False)
-    mat_events = np.atleast_1d(eeglab['event'])
-    latencies = [event.latency for event in mat_events]
-    assert_array_equal(latencies, events[:, 0] + 1)
-    assert_array_equal([event.epoch for event in mat_events], [1, 1, 2, 3])
-
-
-@pytest.mark.parametrize(('tmin', 'tmax', 'expected'), (
-    (0.1, 0.2, [1, 12]),
-    (-0.2, -0.1, [11, 22]),
-))
-def test_export_set_without_time_zero(tmp_path, tmin, tmax, expected):
-    """Keep event latencies valid when the epoch excludes time zero."""
-    fname = tmp_path / 'no-zero.set'
-    export_set(
-        fname=fname,
-        data=np.zeros((2, 1, 11)),
-        sfreq=100.0,
-        events=np.array([[100, 0, 1], [300, 0, 2]]),
-        tmin=tmin,
-        tmax=tmax,
-        ch_names=['Cz'],
-    )
 
     eeglab = loadmat(fname, squeeze_me=True, struct_as_record=False)
     mat_events = np.atleast_1d(eeglab['event'])
     assert_array_equal([event.latency for event in mat_events], expected)
-    assert_array_equal([event.epoch for event in mat_events], [1, 2])
+    assert_array_equal([event.epoch for event in mat_events], [1, 2, 3])
+    assert_allclose([epoch.eventlatency for epoch in
+                     np.atleast_1d(eeglab['epoch'])], relative, atol=1e-12)
+
+    assert_array_equal(epochs_read.events[:, 0], np.array(expected) - 1)
+    assert_array_equal([event.type for event in mat_events],
+                       [f'event-{code}' for code in events[:, 2]])
+    assert_allclose(epochs_read.get_data(), data, atol=1e-12)
+    assert set(epochs_read.event_id) == set(event_id)
 
 
-def test_export_set_epoch_index_validation(tmp_path):
-    """Report mismatched event and epoch index counts."""
-    data = np.zeros((3, 1, 11))
-    events = np.column_stack((
-        [100, 300, 500],
-        np.zeros(3, dtype=int),
-        [1, 2, 3],
-    ))
-    kwargs = dict(
-        fname=tmp_path / 'invalid.set',
-        data=data,
-        sfreq=100.0,
-        events=events,
-        tmin=-0.1,
-        tmax=0.0,
-        ch_names=['Cz'],
-    )
-
-    with pytest.raises(ValueError, match='2 events and 3 epochs'):
-        export_set(**{**kwargs, 'events': events[:2]})
-    with pytest.raises(ValueError, match=r'got shape \(3, 1\)'):
-        export_set(**kwargs, epoch_indices=np.array([[0], [2], [4]]))
+def test_export_set_multiple_events(tmp_path):
+    """Preserve stimulus/response events in already-concatenated epochs."""
+    events = np.array([[2, 0, 1], [8, 0, 2], [15, 0, 3], [29, 0, 4]])
+    fname = tmp_path / 'multiple.set'
+    kwargs = dict(fname=fname, data=np.zeros((3, 1, 11)), sfreq=100,
+                  events=events, tmin=-0.1, tmax=0, ch_names=['Cz'])
+    export_set(**kwargs, epoch_indices=np.array([0, 0, 1, 2]))
+    eeglab = loadmat(fname, squeeze_me=True, struct_as_record=False)
+    mat_events = np.atleast_1d(eeglab['event'])
+    assert_array_equal([event.latency for event in mat_events], [3, 9, 16, 30])
+    assert_array_equal([event.epoch for event in mat_events], [1, 1, 2, 3])
+    for epoch, latencies in zip(eeglab['epoch'], ([-80, -20], [-60], [-30])):
+        assert_allclose(np.asarray(epoch.eventlatency, dtype=float),
+                        np.squeeze(latencies))
+    with pytest.raises(ValueError, match='4 events and 3 epochs'):
+        export_set(**kwargs)
+    with pytest.raises(ValueError, match=r'got shape \(4, 1\)'):
+        export_set(**kwargs, epoch_indices=np.array([[0], [0], [1], [2]]))
     with pytest.raises(ValueError, match='got dtype float64'):
-        export_set(**kwargs, epoch_indices=np.array([0.0, 2.0, 4.0]))
+        export_set(**kwargs, epoch_indices=np.array([0., 0., 1., 2.]))
     with pytest.raises(ValueError, match='values from 0 to 3'):
-        export_set(**kwargs, epoch_indices=np.array([0, 0, 3]))
+        export_set(**kwargs, epoch_indices=np.array([0, 0, 1, 3]))
+    with pytest.raises(ValueError, match='within the mapped epoch'):
+        export_set(**kwargs, epoch_indices=np.array([0, 1, 1, 2]))
+    with pytest.raises(ValueError, match='non-negative'):
+        export_set(**{**kwargs, 'events': events[:3]},
+                   epoch_indices=np.array([-3, -2, -1]))
+
+
+@pytest.mark.parametrize('dtype', ('U', 'O', 'T'))
+def test_epoch_annotations(tmp_path, dtype):
+    """Keep one epoch record per trial, including equal event counts."""
+    if dtype == 'T' and not hasattr(getattr(np, 'dtypes', None),
+                                    'StringDType'):
+        pytest.skip('StringDType requires NumPy 2')
+    fname = tmp_path / 'annotations.set'
+    export_set(fname, np.zeros((2, 1, 11)), 100,
+               np.array([[100, 0, 1], [300, 0, 2]]), -0.1, 0, ['Cz'],
+               annotations=[np.array(['before', 'a', 'b', 'after'], dtype),
+                            np.array([-.01, 0., .11, .22]),
+                            np.array([0., .02, .05, 0.])])
+    saved = loadmat(fname, squeeze_me=True, struct_as_record=False)
+    assert saved['epoch'].shape == (2,)
+    assert_array_equal([event.epoch for event in saved['event']], [1, 1, 2, 2])
+    assert_array_equal([event.type for event in saved['event']],
+                       ['a', '1', 'b', '2'])
+    assert_allclose([event.duration for event in saved['event']], [2, 0, 5, 0])
+    for epoch, references, labels in zip(saved['epoch'],
+                                         ([1, 2], [3, 4]),
+                                         (['a', '1'], ['b', '2'])):
+        assert_array_equal(epoch.event, references)
+        assert_array_equal(epoch.eventtype, labels)
+        assert_allclose(np.asarray(epoch.eventlatency, float), [-100, 0])

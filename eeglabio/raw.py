@@ -100,7 +100,7 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
 
     # convert annotations to events
     if annotations is not None:
-        events = fromarrays([annotations[0],
+        events = fromarrays([np.asarray(annotations[0], dtype=object),
                              annotations[1] * sfreq + 1,
                              annotations[2] * sfreq],
                             names=["type", "latency", "duration"])
