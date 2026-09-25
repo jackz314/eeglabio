@@ -27,13 +27,9 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
         Event array, the first column contains the event time in samples,
         the second column contains the value of the stim channel immediately
         before the event/step, and the third column contains the event id.
-        With one time-locking event per epoch, rows must follow ``data`` order.
-        Original recording sample numbers (as in MNE) are replaced by the
-        time-zero position in each exported epoch. If time zero lies outside
-        the window, the closest sample is used with a warning.
-        For an explicit multiple-event mapping (see ``epoch_indices``), the
-        first column instead contains 0-based sample positions in the
-        concatenated exported epochs, not the original recording.
+        There must be one time-locking event per epoch, in ``data`` order.
+        The event times are not used; each event is placed at time zero of
+        its epoch (or the closest sample if the window excludes time zero).
     tmin : float
         Start time (seconds) before event.
     tmax : float
@@ -61,20 +57,8 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
     precision : "single" or "double"
         Precision of the exported data (specifically EEG.data in EEGLAB)
     epoch_indices : numpy.ndarray or None
-        1D integer array with one entry per event (same length as ``events``).
-        Non-negative indices with two supported cases:
-
-        * If there is exactly one event per data epoch and all indices are
-          unique, this is an MNE selection array. Its values may be
-          non-consecutive or reordered; events and data must already be in
-          matching order. Exported trial numbers are always 1 through
-          ``n_epochs``, not the original selection plus one. None selects
-          the same one-event-per-epoch behavior.
-        * Otherwise, each value is the 0-based exported trial containing
-          that event, in the range 0 through ``n_epochs - 1``. Event sample
-          positions must already refer to the concatenated exported data.
-          For example, with 11 samples per trial, positions 2 and 8 may be
-          a stimulus and response in trial 0, and position 15 is in trial 1.
+        Unused. Epochs are always numbered consecutively in ``data`` order,
+        as EEGLAB requires, regardless of which original epochs were kept.
 
         .. versionadded:: 0.1.2
 
@@ -101,11 +85,10 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
 
     ch_cnt, epoch_len, trials = data.shape
 
-    if epoch_indices is None and len(events) != trials:
+    if len(events) != trials:
         raise ValueError(
             "The number of events must match the number of epochs in the "
-            "data when epoch_indices is not provided, but got "
-            f"{len(events)} events and {trials} epochs")
+            f"data, but got {len(events)} events and {trials} epochs")
 
     if ch_locs is not None:
         # get full EEGLAB coordinates to export
@@ -129,42 +112,13 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
         ev_types = [str(ev[2]) for ev in events]
     ev_types = np.array(ev_types)
 
-    one_event_per_epoch = epoch_indices is None
-    if epoch_indices is not None:
-        epoch_indices = np.asarray(epoch_indices)
-        if epoch_indices.shape != (len(events),):
-            raise ValueError(
-                "epoch_indices must be a 1D array with one entry per event, "
-                f"but got shape {epoch_indices.shape} for {len(events)} "
-                "events")
-        if not np.issubdtype(epoch_indices.dtype, np.integer):
-            raise ValueError(
-                "epoch_indices must contain integers, but got dtype "
-                f"{epoch_indices.dtype}")
-        if (epoch_indices < 0).any():
-            raise ValueError("epoch_indices must be non-negative, but got "
-                             f"minimum {epoch_indices.min()}")
-        one_event_per_epoch = (len(events) == trials
-                               and len(np.unique(epoch_indices)) == trials)
-    if one_event_per_epoch:
-        zero_sample = int(round(-tmin * sfreq))
-        if not 0 <= zero_sample < epoch_len:
-            logger.warning("The epoch window does not include time zero; "
-                           "events will be placed at the closest sample.")
-            zero_sample = min(max(zero_sample, 0), epoch_len - 1)
-        ev_epoch = np.arange(1, trials + 1, dtype=np.int64)
-        ev_lat = (ev_epoch - 1) * epoch_len + zero_sample + 1
-    else:
-        if (epoch_indices >= trials).any():
-            raise ValueError(
-                "epoch_indices must be between 0 and "
-                f"{trials - 1}, but got values from {epoch_indices.min()} "
-                f"to {epoch_indices.max()}")
-        ev_epoch = epoch_indices.astype(np.int64) + 1
-        ev_lat = events[:, 0].astype(np.int64) + 1
-        if np.any((ev_lat - 1) // epoch_len != epoch_indices):
-            raise ValueError("Event samples must lie within the mapped epoch "
-                             "in the concatenated exported data")
+    zero_sample = int(round(-tmin * sfreq))
+    if not 0 <= zero_sample < epoch_len:
+        logger.warning("The epoch window does not include time zero; "
+                       "events will be placed at the closest sample.")
+        zero_sample = min(max(zero_sample, 0), epoch_len - 1)
+    ev_epoch = np.arange(1, trials + 1, dtype=np.int64)
+    ev_lat = (ev_epoch - 1) * epoch_len + zero_sample + 1
 
     # event durations should all be 0 except boundaries which we don't have
     ev_dur = np.zeros_like(ev_lat, dtype=np.int64)
@@ -236,7 +190,6 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
     # convert lat, pos, type to cell arrays by converting to object arrays
     ep_lat = np.split(all_lat_shifted.astype(dtype=object) * 1000,
                       epoch_start_idx)
-    ep_pos = np.split(all_epoch.astype(dtype=object), epoch_start_idx)
     ep_types = np.split(all_types.astype(dtype=object), epoch_start_idx)
 
     # regular one event per epoch
@@ -245,9 +198,9 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
     # ep_lat = [np.array(n) for n in ev_lat]
     # ep_types = [np.array(n) for n in ev_types]
 
-    field_names = ["event", "eventlatency", "eventposition", "eventtype"]
+    field_names = ["event", "eventlatency", "eventtype"]
     epochs = fromarrays([np.fromiter(arr, dtype=object) for arr in
-                         [ep_event, ep_lat, ep_pos, ep_types]],
+                         [ep_event, ep_lat, ep_types]],
                         names=field_names)
 
     if isinstance(ref_channels, list):
