@@ -1,9 +1,4 @@
 import numpy as np
-try:
-    from numpy.rec import fromarrays  # NumPy 2.0+
-except ImportError:
-    from numpy.core.records import fromarrays  # NumPy <2.0
-
 from scipy.io import savemat
 
 from .utils import cart_to_eeglab, fname_to_setname, logger
@@ -95,13 +90,13 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
         full_coords = cart_to_eeglab(ch_locs)
 
         # convert to record arrays for MATLAB format
-        chanlocs = fromarrays(
+        chanlocs = np.rec.fromarrays(
             [ch_names, *full_coords.T, np.repeat('', len(ch_names))],
             names=["labels", "X", "Y", "Z", "sph_theta", "sph_phi",
                    "sph_radius", "theta", "radius",
                    "sph_theta_besa", "sph_phi_besa", "type"])
     else:
-        chanlocs = fromarrays([ch_names], names=["labels"])
+        chanlocs = np.rec.fromarrays([ch_names], names=["labels"])
 
     # reverse order of event type dict to look up events faster
     # name: value to value: name
@@ -174,8 +169,8 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
     all_epoch = all_epoch[order]
 
     # EEGLAB events format, also used for distinguishing epochs/trials
-    events = fromarrays([all_types, all_lat, all_dur, all_epoch],
-                        names=["type", "latency", "duration", "epoch"])
+    events = np.rec.fromarrays([all_types, all_lat, all_dur, all_epoch],
+                               names=["type", "latency", "duration", "epoch"])
 
     # construct epochs array
     # true epochs array, one subarray per events in epoch
@@ -199,9 +194,9 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
     # ep_types = [np.array(n) for n in ev_types]
 
     field_names = ["event", "eventlatency", "eventtype"]
-    epochs = fromarrays([np.fromiter(arr, dtype=object) for arr in
-                         [ep_event, ep_lat, ep_types]],
-                        names=field_names)
+    epochs = np.rec.fromarrays([np.fromiter(arr, dtype=object) for arr in
+                                [ep_event, ep_lat, ep_types]],
+                               names=field_names)
 
     if isinstance(ref_channels, list):
         ref_channels = " ".join(ref_channels)

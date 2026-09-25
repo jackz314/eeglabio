@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling>=1.27", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "eeglabio"
+dynamic = ["version"]
+description = "I/O support for EEGLAB files in Python"
+readme = "README.md"
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
+authors = [{ name = "Jack Zhang", email = "zhangmengyu10@gmail.com" }]
+requires-python = ">=3.10"
+dependencies = ["numpy", "scipy"]
+keywords = ["EEG", "MEG", "MNE", "EEGLAB"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/jackz314/eeglabio"
+Documentation = "https://eeglabio.readthedocs.io"
+Source = "https://github.com/jackz314/eeglabio"
+Tracker = "https://github.com/jackz314/eeglabio/issues"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.version.raw-options]
+# TestPyPI (stable branch) rejects local versions like +g1234abc
+local_scheme = "no-local-version"
+
+[tool.hatch.build.targets.wheel]
+packages = ["eeglabio"]
+exclude = ["eeglabio/tests"]

@@ -16,14 +16,9 @@ currdir = os.path.dirname(__file__)
 sys.path.append(os.path.abspath(os.path.join(currdir, '..')))
 sys.path.append(os.path.abspath('..'))
 
-version = None
-with open(os.path.join(currdir, '..', 'eeglabio', '_version.py'), 'r') as fid:
-    for line in (line.strip() for line in fid):
-        if line.startswith('__version__'):
-            version = line.split('=')[1].strip().strip("'")
-            break
-if version is None:
-    version = "0.0.1"
+import eeglabio  # noqa: E402
+
+version = eeglabio.__version__
 
 # -- Project information -----------------------------------------------------
 
