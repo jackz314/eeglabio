@@ -1,11 +1,6 @@
 import numpy as np
 from scipy.io import savemat
 
-try:
-    from numpy.rec import fromarrays  # NumPy 2.0+
-except ImportError:
-    from numpy.core.records import fromarrays  # NumPy <2.0
-
 from .utils import cart_to_eeglab, fname_to_setname
 
 
@@ -73,13 +68,14 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
         full_coords = cart_to_eeglab(ch_locs)
 
         # convert to record arrays for MATLAB format
-        chanlocs = fromarrays(
+        chanlocs = np.rec.fromarrays(
             [ch_names, *full_coords.T, ch_types],
             names=["labels", "X", "Y", "Z", "sph_theta", "sph_phi",
                    "sph_radius", "theta", "radius",
                    "sph_theta_besa", "sph_phi_besa", "type"])
     else:
-        chanlocs = fromarrays([ch_names, ch_types], names=["labels", "type"])
+        chanlocs = np.rec.fromarrays(
+            [ch_names, ch_types], names=["labels", "type"])
 
     if isinstance(ref_channels, list):
         ref_channels = " ".join(ref_channels)
@@ -100,10 +96,10 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
 
     # convert annotations to events
     if annotations is not None:
-        events = fromarrays([annotations[0],
-                             annotations[1] * sfreq + 1,
-                             annotations[2] * sfreq],
-                            names=["type", "latency", "duration"])
+        events = np.rec.fromarrays([annotations[0],
+                                    annotations[1] * sfreq + 1,
+                                    annotations[2] * sfreq],
+                                   names=["type", "latency", "duration"])
         eeg_d['event'] = events
 
     savemat(str(fname), eeg_d, appendmat=False)
