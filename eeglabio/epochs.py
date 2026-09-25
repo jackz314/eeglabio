@@ -1,12 +1,12 @@
 import numpy as np
-from scipy.io import savemat
 
-from .utils import cart_to_eeglab, fname_to_setname, logger
+from .utils import (_get_savemat, _to_microvolts, cart_to_eeglab,
+                    fname_to_setname, logger)
 
 
 def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
                ch_locs=None, annotations=None, ref_channels="common",
-               precision="single", *, epoch_indices=None):
+               precision="single", *, epoch_indices=None, fmt="v5"):
     """Export epoch data to EEGLAB's .set format.
 
     Parameters
@@ -56,6 +56,12 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
         as EEGLAB requires, regardless of which original epochs were kept.
 
         .. versionadded:: 0.1.2
+    fmt : "v5" | "v7.3"
+        MATLAB file format. ``"v5"`` is limited to 2 GB per variable,
+        ``"v7.3"`` (HDF5-based) is not but requires
+        `h5py <https://www.h5py.org>`__.
+
+        .. versionadded:: 0.1.4
 
     See Also
     --------
@@ -69,14 +75,9 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
 
     # Extact path stem for EEG.setname
     setname = fname_to_setname(fname)
-
-    data = data * 1e6  # convert to microvolts
-    data = np.moveaxis(data, 0, 2)  # convert to EEGLAB 3D format
-
-    if precision not in ("single", "double"):
-        raise ValueError(f"Unsupported precision '{precision}', "
-                         f"supported precisions are 'single' and 'double'.")
-    data = data.astype(precision)
+    savemat = _get_savemat(fmt)
+    # convert to EEGLAB 3D format
+    data = _to_microvolts(np.moveaxis(data, 0, 2), precision)
 
     ch_cnt, epoch_len, trials = data.shape
 
@@ -216,4 +217,4 @@ def export_set(fname, data, sfreq, events, tmin, tmax, ch_names, event_id=None,
                  icawinv=[],
                  icasphere=[],
                  icaweights=[])
-    savemat(str(fname), eeg_d, appendmat=False)
+    savemat(str(fname), eeg_d)

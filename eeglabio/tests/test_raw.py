@@ -2,6 +2,7 @@ from os import path as op
 from pathlib import Path
 
 import numpy as np
+import pytest
 from mne.io import read_raw_fif, read_raw_eeglab
 from numpy.testing import assert_allclose
 
@@ -10,12 +11,13 @@ from eeglabio.utils import export_mne_raw
 raw_fname = Path(__file__).parent / "data" / "test_raw.fif"
 
 
-def test_export_set(tmpdir):
+@pytest.mark.parametrize('fmt', ('v5', 'v7.3'))
+def test_export_set(tmpdir, fmt):
     """Test saving a Raw instance to EEGLAB's set format"""
     raw = read_raw_fif(raw_fname).pick_types(
         meg=True, eeg=True, ecg=True).load_data()
     temp_fname = op.join(str(tmpdir), 'test_raw.set')
-    export_mne_raw(raw, temp_fname)
+    export_mne_raw(raw, temp_fname, fmt=fmt)
     raw_read = read_raw_eeglab(temp_fname, preload=True, montage_units='m')
     assert raw.ch_names == raw_read.ch_names
     cart_coords = np.array([d['loc'][:3] for d in raw.info['chs']])  # just xyz

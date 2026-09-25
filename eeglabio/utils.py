@@ -1,5 +1,8 @@
+from functools import partial
 from pathlib import Path
 import logging
+import sys
+import time
 
 import numpy as np
 
@@ -133,7 +136,7 @@ def cart_to_eeglab(cart):
     return np.append(cart, cart_to_eeglab_sph(cart), 1)  # hstack
 
 
-def export_mne_epochs(inst, fname, precision="single"):
+def export_mne_epochs(inst, fname, precision="single", *, fmt="v5"):
     """Export MNE's Epochs instance to EEGLAB's .set format using
     :func:`.epochs.export_set`.
 
@@ -143,6 +146,8 @@ def export_mne_epochs(inst, fname, precision="single"):
         Epochs instance to save
     fname : str
         Name of the export file.
+    fmt : "v5" | "v7.3"
+        MATLAB file format, see :func:`.epochs.export_set`.
     """
     from .epochs import export_set
     # load data first
@@ -169,10 +174,10 @@ def export_mne_epochs(inst, fname, precision="single"):
         annot = None
     export_set(fname, inst.get_data(), inst.info['sfreq'], inst.events,
                inst.tmin, inst.tmax, inst.ch_names, inst.event_id,
-               cart_coords, annot, precision=precision)
+               cart_coords, annot, precision=precision, fmt=fmt)
 
 
-def export_mne_raw(inst, fname, precision="single"):
+def export_mne_raw(inst, fname, precision="single", *, fmt="v5"):
     """Export MNE's Raw instance to EEGLAB's .set format using
     :func:`.raw.export_set`.
 
@@ -182,6 +187,8 @@ def export_mne_raw(inst, fname, precision="single"):
         Raw instance to save.
     fname : str
         Name of the export file.
+    fmt : "v5" | "v7.3"
+        MATLAB file format, see :func:`.raw.export_set`.
     """
     from .raw import export_set
 
@@ -218,7 +225,7 @@ def export_mne_raw(inst, fname, precision="single"):
                    inst.annotations.duration]
     export_set(fname, inst.get_data(), inst.info['sfreq'], inst.ch_names,
                cart_coords, annotations, ch_types=ch_types,
-               precision=precision)
+               precision=precision, fmt=fmt)
 
 
 def fname_to_setname(fname):
@@ -237,3 +244,93 @@ def fname_to_setname(fname):
       - no file extension
     """
     return Path(fname).stem
+
+
+def _to_microvolts(data, precision):
+    if precision not in ("single", "double"):
+        raise ValueError(f"Unsupported precision '{precision}', "
+                         f"supported precisions are 'single' and 'double'.")
+    # scale directly into the output dtype to avoid a float64 temporary, in
+    # Fortran order so that MATLAB's column-major layout needs no copy
+    data = np.asarray(data)
+    out = np.empty(data.shape, precision, order="F")
+    return np.multiply(data, 1e6, out=out, casting="same_kind")
+
+
+def _get_savemat(fmt):
+    if fmt == "v5":
+        from scipy.io import savemat
+        return partial(savemat, appendmat=False)
+    if fmt == "v7.3":
+        try:
+            import h5py  # noqa: F401
+        except ImportError:
+            raise ImportError("h5py is required to export with fmt='v7.3'") \
+                from None
+        return _savemat_v73
+    raise ValueError(f"Unsupported fmt '{fmt}', supported formats are "
+                     f"'v5' and 'v7.3'.")
+
+
+def _savemat_v73(fname, mdict):
+    import h5py
+
+    with h5py.File(fname, "w", userblock_size=512) as fid:
+        for key, value in mdict.items():
+            _write_h5(fid, key, value)
+    header = (f"MATLAB 7.3 MAT-file, Platform: {sys.platform}, "
+              f"Created on: {time.asctime()} HDF5 schema 1.00 .")
+    # version 0x0200 + "IM" endian indicator is what marks the file as v7.3
+    header = header.encode().ljust(116) + b" " * 8 + b"\x00\x02IM"
+    with open(fname, "r+b") as fid:
+        fid.write(header)
+
+
+def _write_h5(group, name, value):
+    import h5py
+
+    if isinstance(value, np.ndarray) and value.dtype.names:
+        struct = group.create_group(name)
+        struct.attrs["MATLAB_class"] = np.bytes_("struct")
+        struct.attrs["MATLAB_fields"] = np.array(
+            [np.frombuffer(field.encode(), "S1")
+             for field in value.dtype.names],
+            dtype=h5py.vlen_dtype("S1"))
+        for field in value.dtype.names:
+            if value.size == 1:  # MATLAB stores scalar struct fields inline
+                _write_h5(struct, field, value[field].item())
+            else:
+                _write_h5_refs(struct, field, value[field])
+        return
+    if isinstance(value, np.ndarray) and value.dtype == object:
+        _write_h5_refs(group, name, value).attrs["MATLAB_class"] = \
+            np.bytes_("cell")
+        return
+    if isinstance(value, str):
+        value = np.frombuffer(value.encode("utf-16-le"), "<u2")
+        matlab_class = "char"
+    else:
+        value = np.asarray(value)
+        matlab_class = dict(float64="double", float32="single").get(
+            value.dtype.name, value.dtype.name)
+    if value.size:
+        dataset = group.create_dataset(name, data=np.atleast_2d(value).T)
+    else:  # MATLAB stores empties as their (0x0) dimensions
+        dataset = group.create_dataset(name, data=np.zeros(2, np.uint64))
+        dataset.attrs["MATLAB_empty"] = np.uint8(1)
+    dataset.attrs["MATLAB_class"] = np.bytes_(matlab_class)
+    if matlab_class == "char":
+        dataset.attrs["MATLAB_int_decode"] = np.int64(2)
+
+
+def _write_h5_refs(group, name, values):
+    import h5py
+
+    refs_group = group.file.require_group("#refs#")
+    values = np.atleast_2d(values)
+    refs = np.empty(values.shape, h5py.ref_dtype)
+    for idx, value in np.ndenumerate(values):
+        key = f"{group.name}/{name}{list(idx)}".replace("/", ".")
+        _write_h5(refs_group, key, value)
+        refs[idx] = refs_group[key].ref
+    return group.create_dataset(name, data=refs.T)

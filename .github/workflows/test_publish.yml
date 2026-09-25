@@ -41,13 +41,13 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -e . numpy==${{ matrix.numpy-version }}
-        pip install mne flake8 pytest pymatreader
+        pip install mne pytest pymatreader ruff
         mne sys_info -d
       shell: bash -el {0}
 
     - name: Lint
       run: |
-        flake8 .
+        ruff check .
 
     - name: Test
       run: |

@@ -1,11 +1,12 @@
 import numpy as np
-from scipy.io import savemat
 
-from .utils import cart_to_eeglab, fname_to_setname
+from .utils import (_get_savemat, _to_microvolts, cart_to_eeglab,
+                    fname_to_setname)
 
 
 def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
-               ref_channels="common", ch_types=None, precision="single"):
+               ref_channels="common", ch_types=None, precision="single", *,
+               fmt="v5"):
     """Export continuous raw data to EEGLAB's .set format.
 
     Parameters
@@ -38,6 +39,12 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
         ``"Events"``.
     precision : "single" or "double"
         Precision of the exported data (specifically EEG.data in EEGLAB)
+    fmt : "v5" | "v7.3"
+        MATLAB file format. ``"v5"`` is limited to 2 GB per variable,
+        ``"v7.3"`` (HDF5-based) is not but requires
+        `h5py <https://www.h5py.org>`__.
+
+        .. versionadded:: 0.1.4
 
     See Also
     --------
@@ -51,13 +58,8 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
 
     # Extact path stem for EEG.setname
     setname = fname_to_setname(fname)
-
-    data = data * 1e6  # convert to microvolts
-
-    if precision not in ("single", "double"):
-        raise ValueError(f"Unsupported precision '{precision}', "
-                         f"supported precisions are 'single' and 'double'.")
-    data = data.astype(precision)
+    savemat = _get_savemat(fmt)
+    data = _to_microvolts(data, precision)
 
     # channel types
     ch_types = np.array(ch_types) if ch_types is not None \
@@ -102,4 +104,4 @@ def export_set(fname, data, sfreq, ch_names, ch_locs=None, annotations=None,
                                    names=["type", "latency", "duration"])
         eeg_d['event'] = events
 
-    savemat(str(fname), eeg_d, appendmat=False)
+    savemat(str(fname), eeg_d)
