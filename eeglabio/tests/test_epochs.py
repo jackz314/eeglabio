@@ -27,7 +27,8 @@ def _get_data(preload=False):
 
 
 @pytest.mark.parametrize('preload', (True, False))
-def test_export_set(tmpdir, preload):
+@pytest.mark.parametrize('fmt', ('v5', 'v7.3'))
+def test_export_set(tmpdir, preload, fmt):
     """Test saving an Epochs instance to EEGLAB's set format"""
     raw, events = _get_data()[:2]
     raw.load_data()
@@ -41,7 +42,7 @@ def test_export_set(tmpdir, preload):
     # annot = mne.Annotations(annot_onsets, annot_dur, annot_desc)
     # epochs.set_annotations(annot)
     temp_fname = op.join(str(tmpdir), 'test_epochs.set')
-    export_mne_epochs(epochs, temp_fname)
+    export_mne_epochs(epochs, temp_fname, fmt=fmt)
     epochs_read = read_epochs_eeglab(temp_fname, montage_units='m')
     assert epochs.ch_names == epochs_read.ch_names
     cart_coords = np.array([d['loc'][:3]

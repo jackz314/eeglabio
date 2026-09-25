@@ -36,6 +36,9 @@ eeglabio requires Python >= 3.10 and the following packages:
 * [numpy](http://numpy.org/)
 * [scipy](https://www.scipy.org/)
 
+Exporting to the MATLAB v7.3 (HDF5) format, needed for 2 GB or more of data,
+also requires [h5py](https://www.h5py.org).
+
 For testing, we also require the following additional packages:
 
 * [mne](https://github.com/mne-tools/mne-python)

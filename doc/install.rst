@@ -6,7 +6,7 @@ You can install MNE-Python using ``pip`` from `PyPI <http://pypi.org/project/eeg
 
   .. code-block:: console
 
-      pip install eeglabio  # dependencies are numpy, scipy
+      pip install eeglabio  # dependencies are numpy, scipy (and optionally h5py)
 
 Alternatively, from `Test PyPI <http://test.pypi.org/project/eeglabio>`_:
 
