@@ -1,7 +1,7 @@
 Installation
 ============
 
-eeglabio requires Python version 3.6 or higher.
+eeglabio requires Python version 3.10 or higher.
 You can install MNE-Python using ``pip`` from `PyPI <http://pypi.org/project/eeglabio>`_:
 
   .. code-block:: console

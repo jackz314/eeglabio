@@ -31,7 +31,7 @@ pip install https://github.com/jackz314/eeglabio/archive/main.zip
 
 ### Dependencies
 
-eeglabio requires Python >= 3.6 and the following packages:
+eeglabio requires Python >= 3.10 and the following packages:
 
 * [numpy](http://numpy.org/)
 * [scipy](https://www.scipy.org/)
