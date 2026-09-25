@@ -246,7 +246,6 @@ def fname_to_setname(fname):
     return Path(fname).stem
 
 
-
 def _to_microvolts(data, precision):
     if precision not in ("single", "double"):
         raise ValueError(f"Unsupported precision '{precision}', "

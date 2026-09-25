@@ -34,3 +34,9 @@ local_scheme = "no-local-version"
 [tool.hatch.build.targets.wheel]
 packages = ["eeglabio"]
 exclude = ["eeglabio/tests"]
+
+[tool.ruff]
+line-length = 79
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
